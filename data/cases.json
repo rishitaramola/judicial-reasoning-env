@@ -4,7 +4,7 @@
     "domain": "contract",
     "difficulty": "easy",
     "fact_pattern": "Ramesh agreed to supply 500 kg of wheat to Suresh by March 1st for Rs. 50,000. Ramesh failed to deliver. Suresh had to buy from another supplier at Rs. 65,000.",
-    "applicable_statutes": ["Indian Contract Act 1872, Section 73 - Compensation for loss"],
+    "applicable_statutes": ["Indian Contract Act 1872, Section 73 - Compensation for loss or damage caused by breach of contract"],
     "precedents": [
       {
         "case_id": "P001",
@@ -28,13 +28,13 @@
     "domain": "contract",
     "difficulty": "easy",
     "fact_pattern": "Priya hired a contractor to renovate her shop within 30 days for Rs. 2,00,000. The contractor completed the work in 45 days. Priya refused to pay claiming full breach.",
-    "applicable_statutes": ["Indian Contract Act 1872, Section 55 - Time as essence of contract"],
+    "applicable_statutes": ["Indian Contract Act 1872, Section 55 - Effect of failure to perform at fixed time"],
     "precedents": [
       {
         "case_id": "P003",
         "case_name": "Startup v Macdonald (1843)",
         "verdict": "partial_liability",
-        "rationale": "Substantial performance may still entitle contractor to payment minus damages."
+        "rationale": "Substantial performance may still entitle contractor to payment minus damages for delay."
       }
     ],
     "evidence_flags": ["contractor_delay_documented", "work_quality_undisputed"],
@@ -42,69 +42,292 @@
     "gold_label_reasoning": "Contractor liable for delay damages but entitled to payment for completed work."
   },
   {
+    "case_id": "C003",
+    "domain": "contract",
+    "difficulty": "easy",
+    "fact_pattern": "Anil booked a wedding hall for Rs. 5,00,000 six months in advance. The hall owner cancelled 2 weeks before the wedding citing renovation needs. Anil had already paid Rs. 2,00,000 as advance.",
+    "applicable_statutes": [
+      "Indian Contract Act 1872, Section 73 - Compensation for loss or damage caused by breach of contract",
+      "Indian Contract Act 1872, Section 65 - Obligation of person who has received advantage under void agreement"
+    ],
+    "precedents": [
+      {
+        "case_id": "P009",
+        "case_name": "Alopi Parshad v Union of India (1960)",
+        "verdict": "liable",
+        "rationale": "Party cancelling contract must compensate for foreseeable losses caused."
+      }
+    ],
+    "evidence_flags": ["advance_payment_confirmed", "cancellation_notice_documented"],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Hall owner breached contract. Full advance refund plus consequential damages for alternative venue costs recoverable."
+  },
+  {
+    "case_id": "C004",
+    "domain": "contract",
+    "difficulty": "easy",
+    "fact_pattern": "Meera sold her car to Raj for Rs. 3,00,000. After payment, Meera discovered the car had an undisclosed lien from a bank loan. The bank repossessed the car from Raj.",
+    "applicable_statutes": [
+      "Sale of Goods Act 1930, Section 14 - Implied condition as to title",
+      "Indian Contract Act 1872, Section 17 - Fraud"
+    ],
+    "precedents": [
+      {
+        "case_id": "P010",
+        "case_name": "Rowland v Divall (1923)",
+        "verdict": "liable",
+        "rationale": "Seller without clear title cannot pass title. Buyer entitled to full refund."
+      }
+    ],
+    "evidence_flags": ["bank_lien_confirmed", "seller_awareness_disputed"],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Seller had no clear title. Buyer entitled to full refund under Section 14 of Sale of Goods Act."
+  },
+  {
+    "case_id": "C005",
+    "domain": "contract",
+    "difficulty": "easy",
+    "fact_pattern": "Vikram agreed to paint Sunita's house for Rs. 80,000 in 10 days. He finished in 10 days but used a slightly different shade of white than specified. Sunita refused to pay the full amount.",
+    "applicable_statutes": [
+      "Indian Contract Act 1872, Section 37 - Obligation of parties to contracts",
+      "Indian Contract Act 1872, Section 55 - Effect of failure to perform at fixed time"
+    ],
+    "precedents": [
+      {
+        "case_id": "P011",
+        "case_name": "Hoenig v Isaacs (1952)",
+        "verdict": "partial_liability",
+        "rationale": "Substantial performance entitles contractor to payment minus cost of making good the defect."
+      }
+    ],
+    "evidence_flags": ["color_difference_minor", "work_completed_on_time"],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Substantial performance achieved. Sunita must pay Rs. 80,000 minus small deduction for color correction cost."
+  },
+  {
     "case_id": "T001",
     "domain": "tort",
     "difficulty": "medium",
     "fact_pattern": "A hospital left a surgical sponge inside a patient during an operation. The patient suffered infection 3 months later. The hospital claims the infection was unrelated.",
-    "applicable_statutes": ["Law of Torts - Negligence", "Consumer Protection Act 2019, Section 2(42)"],
+    "applicable_statutes": [
+      "Law of Torts - Negligence",
+      "Consumer Protection Act 2019, Section 2(42) - Deficiency in service"
+    ],
     "precedents": [
       {
         "case_id": "P004",
         "case_name": "Jacob Mathew v State of Punjab (2005)",
         "verdict": "liable",
-        "rationale": "Res ipsa loquitur applies in medical negligence cases."
+        "rationale": "Res ipsa loquitur applies in medical negligence — the thing speaks for itself."
       },
       {
         "case_id": "P005",
         "case_name": "Spring Meadows Hospital v Harjol Ahluwalia (1998)",
         "verdict": "liable",
-        "rationale": "Hospital vicariously liable for staff negligence."
+        "rationale": "Hospital vicariously liable for staff negligence during treatment."
       }
     ],
     "evidence_flags": ["conflicting_medical_expert_testimony", "causation_disputed"],
     "gold_label_verdict": "liable",
-    "gold_label_reasoning": "Res ipsa loquitur — sponge inside patient speaks for itself. Hospital liable."
+    "gold_label_reasoning": "Res ipsa loquitur — surgical sponge inside patient speaks for itself. Hospital is liable."
   },
   {
     "case_id": "T002",
     "domain": "tort",
     "difficulty": "medium",
     "fact_pattern": "A pedestrian jaywalked and was hit by a car travelling 10 km/h over the speed limit. Both parties claim the other is at fault.",
-    "applicable_statutes": ["Motor Vehicles Act 1988, Section 166", "Law of Torts - Contributory Negligence"],
+    "applicable_statutes": [
+      "Motor Vehicles Act 1988, Section 166 - Application for compensation",
+      "Law of Torts - Contributory Negligence"
+    ],
     "precedents": [
       {
         "case_id": "P006",
         "case_name": "Minu B. Mehta v Balkrishna (1977)",
         "verdict": "partial_liability",
-        "rationale": "Contributory negligence reduces but does not eliminate liability."
+        "rationale": "Contributory negligence reduces but does not eliminate driver's liability."
       }
     ],
     "evidence_flags": ["pedestrian_jaywalking_confirmed", "driver_speeding_confirmed", "no_cctv"],
     "gold_label_verdict": "not_liable",
-    "gold_label_reasoning": "Contributory negligence of pedestrian is primary cause. Driver liability reduced significantly."
+    "gold_label_reasoning": "Contributory negligence of pedestrian is primary cause. Driver liability significantly reduced. Verdict: not liable for full damages."
+  },
+  {
+    "case_id": "T003",
+    "domain": "tort",
+    "difficulty": "medium",
+    "fact_pattern": "A school bus driver ran a red light and collided with a motorcycle. The motorcyclist was not wearing a helmet as required by law. The motorcyclist suffered head injuries.",
+    "applicable_statutes": [
+      "Motor Vehicles Act 1988, Section 129 - Wearing of protective headgear",
+      "Law of Torts - Contributory Negligence",
+      "Motor Vehicles Act 1988, Section 166 - Application for compensation"
+    ],
+    "precedents": [
+      {
+        "case_id": "P012",
+        "case_name": "Pratap Narain Singh Deo v Srinivas Sabata (1976)",
+        "verdict": "liable",
+        "rationale": "Driver running red light is primarily negligent. Victim's contributory negligence reduces but does not eliminate liability."
+      }
+    ],
+    "evidence_flags": ["red_light_violation_confirmed", "no_helmet_confirmed", "cctv_available"],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Driver primarily liable for red light violation. Damages reduced by 25% for contributory negligence due to no helmet."
+  },
+  {
+    "case_id": "T004",
+    "domain": "tort",
+    "difficulty": "medium",
+    "fact_pattern": "A restaurant served peanut-containing food to a customer who had clearly informed the waiter of a severe peanut allergy. The customer suffered anaphylactic shock and was hospitalized.",
+    "applicable_statutes": [
+      "Consumer Protection Act 2019, Section 2(9) - Consumer rights",
+      "Law of Torts - Negligence",
+      "Food Safety and Standards Act 2006 - Labelling requirements"
+    ],
+    "precedents": [
+      {
+        "case_id": "P013",
+        "case_name": "Donoghue v Stevenson (1932)",
+        "verdict": "liable",
+        "rationale": "Duty of care exists to foreseeable victims of negligent acts."
+      },
+      {
+        "case_id": "P014",
+        "case_name": "Peppiat v Rooney (1954)",
+        "verdict": "liable",
+        "rationale": "Restaurant liable when customer clearly discloses allergy and staff ignores the warning."
+      }
+    ],
+    "evidence_flags": ["allergy_disclosure_witnessed", "menu_undisclosed_peanut_ingredients"],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Clear duty of care breached after explicit allergy disclosure. Restaurant fully liable for medical damages."
   },
   {
     "case_id": "PR001",
     "domain": "property",
     "difficulty": "hard",
     "fact_pattern": "Grandfather died without a will. Three grandchildren claim inheritance. Child A has a registered sale deed from grandfather dated 2018. Child B claims the deed was signed under coercion. Child C claims adverse possession for 15 years.",
-    "applicable_statutes": ["Hindu Succession Act 1956, Section 8", "Transfer of Property Act 1882, Section 53A", "Limitation Act 1963, Section 65"],
+    "applicable_statutes": [
+      "Hindu Succession Act 1956, Section 8 - General rules of succession",
+      "Transfer of Property Act 1882, Section 53A - Part performance",
+      "Limitation Act 1963, Section 65 - Adverse possession"
+    ],
     "precedents": [
       {
         "case_id": "P007",
         "case_name": "Ravinder Kaur Grewal v Manjit Kaur (2019)",
         "verdict": "adverse_possession_valid",
-        "rationale": "12 years continuous possession can override registered title."
+        "rationale": "12 years of continuous possession can override registered title under Limitation Act."
       },
       {
         "case_id": "P008",
         "case_name": "Vidhyadhar v Manikrao (1999)",
         "verdict": "sale_deed_valid",
-        "rationale": "Registered sale deed presumed valid unless fraud proven by clear evidence."
+        "rationale": "Registered sale deed presumed valid unless fraud proven by clear and cogent evidence."
       }
     ],
     "evidence_flags": ["coercion_claim_unsubstantiated", "possession_duration_disputed", "conflicting_precedents"],
     "gold_label_verdict": "liable",
-    "gold_label_reasoning": "Registered sale deed (Child A) presumed valid. Coercion unsubstantiated. Adverse possession claim insufficient without continuous possession proof."
+    "gold_label_reasoning": "Registered sale deed (Child A) presumed valid. Coercion unsubstantiated. Adverse possession claim insufficient without proof of continuous, hostile possession."
+  },
+  {
+    "case_id": "PR002",
+    "domain": "property",
+    "difficulty": "hard",
+    "fact_pattern": "Two brothers inherited a shop equally from their father. Brother A ran the shop for 20 years and made improvements worth Rs. 10 lakhs. Brother B now claims 50% of the improved value. Brother A claims full ownership by adverse possession.",
+    "applicable_statutes": [
+      "Hindu Succession Act 1956, Section 19 - Mode of succession of two or more heirs",
+      "Limitation Act 1963, Section 65 - Adverse possession of immovable property",
+      "Transfer of Property Act 1882, Section 44 - Transfer by one co-owner"
+    ],
+    "precedents": [
+      {
+        "case_id": "P015",
+        "case_name": "Keshav v Narayan (2001)",
+        "verdict": "not_liable",
+        "rationale": "Co-owner cannot claim adverse possession against another co-owner during joint ownership."
+      },
+      {
+        "case_id": "P016",
+        "case_name": "Joginder Kumar v State of UP (1994)",
+        "verdict": "partial_liability",
+        "rationale": "Improvements by one co-owner entitle them to reimbursement before partition."
+      }
+    ],
+    "evidence_flags": ["joint_ownership_confirmed", "improvement_receipts_available", "brother_b_never_objected"],
+    "gold_label_verdict": "not_liable",
+    "gold_label_reasoning": "Co-owner cannot claim adverse possession. Brother B entitled to 50% but Brother A entitled to reimbursement for improvement costs before partition."
+  },
+  {
+    "case_id": "PR003",
+    "domain": "property",
+    "difficulty": "hard",
+    "fact_pattern": "A tenant has lived in a property for 25 years under a rent agreement. The landlord died and the heir wants to evict the tenant claiming the rent agreement expired. The tenant has receipts for rent paid continuously.",
+    "applicable_statutes": [
+      "Transfer of Property Act 1882, Section 106 - Duration of certain leases",
+      "Rent Control Act - Statutory tenant protection",
+      "Limitation Act 1963 - Relevant limitation periods"
+    ],
+    "precedents": [
+      {
+        "case_id": "P017",
+        "case_name": "Atma Ram Properties v Federal Motors (2005)",
+        "verdict": "not_liable",
+        "rationale": "Long-term tenant with continuous rent payment record has statutory protected tenancy rights."
+      }
+    ],
+    "evidence_flags": ["rent_receipts_available", "original_agreement_expired", "heir_claim_documented"],
+    "gold_label_verdict": "not_liable",
+    "gold_label_reasoning": "25 years of continuous tenancy with rent receipts creates statutory protected tenancy. Eviction not valid without proper notice under Rent Control Act."
+  },
+  {
+    "case_id": "PR004",
+    "domain": "property",
+    "difficulty": "hard",
+    "fact_pattern": "A developer constructed an extra floor on a building without written permission. The municipality ordered demolition. The developer claims the extra floor was approved verbally by a municipal officer. Residents below fear structural damage.",
+    "applicable_statutes": [
+      "Municipal Corporation Act - Mandatory written building approval",
+      "Environment Protection Act 1986 - Construction standards",
+      "Transfer of Property Act 1882 - Rights of property owners"
+    ],
+    "precedents": [
+      {
+        "case_id": "P018",
+        "case_name": "Dipak Kumar v Municipal Corporation (2010)",
+        "verdict": "liable",
+        "rationale": "Verbal permissions have no legal standing for construction. Written approval is mandatory under municipal law."
+      }
+    ],
+    "evidence_flags": ["no_written_permit", "structural_report_pending", "verbal_approval_disputed"],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "No written permit exists. Verbal approval has no legal standing. Municipality's demolition order is valid."
+  },
+  {
+    "case_id": "PR005",
+    "domain": "property",
+    "difficulty": "hard",
+    "fact_pattern": "A woman claims ownership of land through a will made by her uncle. Her cousin contests the will claiming the uncle was mentally unsound when signing. Two doctors give conflicting testimonies about the uncle's mental state at the time of signing.",
+    "applicable_statutes": [
+      "Indian Succession Act 1925, Section 59 - Testamentary capacity",
+      "Indian Evidence Act 1872, Section 45 - Opinions of experts",
+      "Hindu Succession Act 1956 - Intestate succession fallback"
+    ],
+    "precedents": [
+      {
+        "case_id": "P019",
+        "case_name": "Smt. Bhagwati v Bharat Singh (1966)",
+        "verdict": "liable",
+        "rationale": "Will propounder must prove testamentary capacity when genuinely and seriously contested."
+      },
+      {
+        "case_id": "P020",
+        "case_name": "H. Venkatachala v B.N. Thimmajamma (1959)",
+        "verdict": "not_liable",
+        "rationale": "Registered will carries strong presumption of validity. Burden of proof lies on the contestant."
+      }
+    ],
+    "evidence_flags": ["conflicting_medical_testimony", "will_duly_registered", "family_dispute_history"],
+    "gold_label_verdict": "not_liable",
+    "gold_label_reasoning": "Registered will carries presumption of validity. Conflicting testimony alone is insufficient to overturn. Woman's claim upheld."
   }
 ]
