@@ -87,10 +87,10 @@ R = 0.3·logic + 0.4·accuracy + 0.2·fairness + 0.1·citation
 
 | Task | Domain | Difficulty | Baseline Score | Description |
 |---|---|---|---|---|
-| `task1_contract` | Contract Law | Easy | **0.9760** | Breach, delay, title defects under Indian Contract Act |
-| `task2_tort` | Tort/Negligence | Medium | **0.6853** | Conflicting evidence, contributory negligence, medical malpractice |
-| `task3_property` | Property/Inheritance | Hard | **0.5520** | Competing claims, adverse possession, contested wills |
-| **Overall** | | | **0.7378** | |
+| `task1_contract` | Contract Law | Easy | **0.9342** | Breach, delay, title defects under Indian Contract Act |
+| `task2_tort` | Tort/Negligence | Medium | **0.9632** | Conflicting evidence, contributory negligence, medical malpractice |
+| `task3_property` | Property/Inheritance | Hard | **1.0000** | Competing claims, adverse possession, contested wills |
+| **Overall** | | | **0.9658** | |
 
 ---
 
