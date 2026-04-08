@@ -13,10 +13,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.groq.com/openai/v1")
-MODEL_NAME = os.environ.get("MODEL_NAME", "llama-3.3-70b-versatile")
-# GROQ_API_KEY first (local + HF Space secret); HF_TOKEN as evaluator fallback
-API_KEY = os.environ.get("GROQ_API_KEY") or os.environ.get("HF_TOKEN", "")
+MODEL_NAME   = os.environ.get("MODEL_NAME", "llama-3.3-70b-versatile")
+HF_TOKEN     = os.environ.get("HF_TOKEN")  # No default — evaluator provides this
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")  # Local dev fallback only
 
+API_KEY = HF_TOKEN or GROQ_API_KEY
 client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
 
 MAX_TOTAL_REWARD = 1.0
