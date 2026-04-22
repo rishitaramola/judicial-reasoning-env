@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Judicial Reasoning RL Environment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <span class="emoji">⚖️</span>
+                <h1>Judicial Env</h1>
+                <p class="subtitle">RL Benchmark</p>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>Select Task</h3>
+                <div id="task-list" class="task-list">
+                    <!-- Tasks will be populated here -->
+                    <div class="loading-spinner">Loading...</div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section info-section">
+                <h3>Architecture Overview</h3>
+                <p><strong>Agent:</strong> LLM Judge</p>
+                <p><strong>Goal:</strong> Read facts, output valid verdict + reasoning chain.</p>
+                <div class="weights">
+                    <span>30% Logic</span>
+                    <span>40% Accuracy</span>
+                    <span>20% Fairness</span>
+                    <span>10% Citation</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-nav">
+                <div class="case-header">
+                    <h2 id="case-title">Select a Task</h2>
+                    <span id="case-difficulty" class="badge"></span>
+                </div>
+                <button id="reset-btn" class="btn secondary-btn" disabled>🔄 Load New Case</button>
+            </header>
+
+            <div class="content-grid" id="main-grid" style="display: none;">
+                <!-- Left Panel: Case Details -->
+                <div class="case-details panel glass">
+                    <div class="section-block">
+                        <h3>Fact Pattern</h3>
+                        <p id="fact-pattern" class="text-block">...</p>
+                    </div>
+                    
+                    <div class="section-block">
+                        <h3>Evidence Flags</h3>
+                        <div id="evidence-flags" class="tags-container"></div>
+                    </div>
+
+                    <div class="section-block">
+                        <h3>Applicable Statutes</h3>
+                        <ul id="statutes-list" class="styled-list"></ul>
+                    </div>
+
+                    <div class="section-block">
+                        <h3>Precedents</h3>
+                        <div id="precedents-list" class="accordion"></div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Judgment Form -->
+                <div class="judgment-panel panel glass">
+                    <h3>Deliver Judgment</h3>
+                    <form id="action-form">
+                        <div class="form-group">
+                            <label for="verdict">Verdict</label>
+                            <select id="verdict" required>
+                                <option value="">Select verdict...</option>
+                                <option value="liable">Liable</option>
+                                <option value="not_liable">Not Liable</option>
+                                <option value="guilty">Guilty</option>
+                                <option value="not_guilty">Not Guilty</option>
+                                <option value="partial_liability">Partial Liability</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confidence">Confidence Score: <span id="confidence-val">0.85</span></label>
+                            <input type="range" id="confidence" min="0" max="1" step="0.01" value="0.85">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reasoning">Reasoning Chain</label>
+                            <textarea id="reasoning" rows="6" placeholder="Provide step-by-step logical reasoning..." required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Cite Precedents</label>
+                            <div id="citation-options" class="checkbox-group">
+                                <!-- Checkboxes populated dynamically -->
+                            </div>
+                        </div>
+
+                        <button type="submit" id="submit-btn" class="btn primary-btn w-100">Submit Verdict</button>
+                    </form>
+
+                    <!-- Results Overlay -->
+                    <div id="results-overlay" class="results-overlay" style="display: none;">
+                        <h3>Judgment Result</h3>
+                        <div class="score-circle">
+                            <span id="composite-score">0.00</span>
+                            <small>Composite Reward</small>
+                        </div>
+                        <div class="metrics-grid">
+                            <div class="metric">
+                                <span class="metric-label">Logic</span>
+                                <span id="score-logic" class="metric-value">0.00</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Accuracy</span>
+                                <span id="score-accuracy" class="metric-value">0.00</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Fairness</span>
+                                <span id="score-fairness" class="metric-value">0.00</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Citation</span>
+                                <span id="score-citation" class="metric-value">0.00</span>
+                            </div>
+                        </div>
+                        <button id="next-case-btn" class="btn secondary-btn w-100 mt-3">Next Case</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="empty-state" class="empty-state">
+                <span class="emoji-large">⚖️</span>
+                <h2>Welcome to Judicial Reasoning Env</h2>
+                <p>Select a task from the sidebar to begin evaluating cases.</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

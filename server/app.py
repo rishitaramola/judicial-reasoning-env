@@ -20,7 +20,7 @@ import time
 
 import uvicorn
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, FileResponse
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -62,10 +62,22 @@ app = FastAPI(
 )
 
 
+ui_dir = os.path.join(os.path.dirname(__file__), "ui")
+
 @app.get("/", include_in_schema=False)
 def root():
-    """Redirect to the auto-generated API documentation (Swagger UI)."""
-    return RedirectResponse(url="/docs")
+    """Serve the Judicial Reasoning Env UI."""
+    return FileResponse(os.path.join(ui_dir, "index.html"))
+
+@app.get("/styles.css", include_in_schema=False)
+def styles():
+    """Serve the CSS file."""
+    return FileResponse(os.path.join(ui_dir, "styles.css"))
+
+@app.get("/script.js", include_in_schema=False)
+def script():
+    """Serve the JS file."""
+    return FileResponse(os.path.join(ui_dir, "script.js"))
 
 
 @app.get("/health", response_model=HealthResponse)
