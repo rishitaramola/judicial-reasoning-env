@@ -1,404 +1,277 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const taskListEl = document.getElementById('task-list');
-    const emptyState = document.getElementById('empty-state');
-    const triageFlow = document.getElementById('triage-flow');
-    const resetBtn = document.getElementById('reset-btn');
-    
-    // Phases
-    const phaseA = document.getElementById('phase-a');
-    const phaseB = document.getElementById('phase-b');
-    const phaseC = document.getElementById('phase-c');
-    
-    // Steps
-    const step1 = document.getElementById('step-1');
-    const step2 = document.getElementById('step-2');
-    const step3 = document.getElementById('step-3');
-    const step4 = document.getElementById('step-4');
-
-    // UI Elements for Case Details
-    const caseTitleEl = document.getElementById('case-title');
-    const caseDiffEl = document.getElementById('case-difficulty');
-    const factPatternEl = document.getElementById('fact-pattern');
-    const evidenceFlagsEl = document.getElementById('evidence-flags');
-    const statutesListEl = document.getElementById('statutes-list');
-    const precedentsListEl = document.getElementById('precedents-list');
-    
-    // AI Elements
-    const summonAiBtn = document.getElementById('summon-ai-btn');
-    const aiLoading = document.getElementById('ai-loading');
-    const aiOutput = document.getElementById('ai-output');
-    const resultsOverlay = document.getElementById('results-overlay');
-    const decisionMatrix = document.getElementById('decision-matrix');
-
-    // Escalation Modal
-    const escalationModal = document.getElementById('escalation-modal');
-    
-    // State
-    let currentDomain = null;
-    let currentDifficulty = null;
-    let currentCaseData = null;
-
-    // Initialize
-    fetchTasks();
-
-    async function fetchTasks() {
-        try {
-            const res = await fetch('/tasks');
-            const data = await res.json();
-            renderTaskList(data.tasks);
-        } catch (err) {
-            taskListEl.innerHTML = '<div class="loading-spinner" style="color:var(--accent-danger)">Failed to load tasks. Ensure server is running.</div>';
-            console.error(err);
-        }
-    }
-
-    function renderTaskList(tasks) {
-        taskListEl.innerHTML = '';
-        tasks.forEach(task => {
-            const card = document.createElement('div');
-            card.className = 'task-card';
-            card.innerHTML = `
-                <div class="task-name">${task.id}</div>
-                <div class="task-domain">
-                    <span>${task.domain}</span>
-                    <span class="badge ${task.difficulty}">${task.difficulty}</span>
-                </div>
-            `;
-            card.addEventListener('click', () => {
-                document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
-                card.classList.add('active');
-                loadCase(task.domain, task.difficulty);
-            });
-            taskListEl.appendChild(card);
-        });
-    }
-
-    async function loadCase(domain, difficulty) {
-        currentDomain = domain;
-        currentDifficulty = difficulty;
-        
-        // Reset Flow
-        resetBtn.disabled = true;
-        emptyState.style.display = 'none';
-        triageFlow.style.display = 'block';
-        
-        // Reset Phases
-        phaseA.style.display = 'block';
-        phaseB.style.display = 'none';
-        phaseC.style.display = 'none';
-        
-        // Reset Stepper
-        step1.classList.add('active');
-        step2.classList.remove('active');
-        step3.classList.remove('active');
-        step4.classList.remove('active');
-
-        // Reset AI Output
-        aiLoading.style.display = 'none';
-        aiOutput.style.display = 'none';
-        resultsOverlay.style.display = 'none';
-        decisionMatrix.style.display = 'block';
-        summonAiBtn.style.display = 'block';
-        summonAiBtn.disabled = true;
-        
-        caseTitleEl.textContent = 'Loading Case Data...';
-        
-        try {
-            const res = await fetch('/reset', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ domain, difficulty })
-            });
-            const data = await res.json();
-            currentCaseData = data.observation;
-            caseTitleEl.textContent = `Case Ready for Triage`;
-            resetBtn.disabled = false;
-        } catch (err) {
-            console.error(err);
-            caseTitleEl.textContent = 'Error Loading Case';
-        }
-    }
-
-    // --- Phase A: Triage ---
-    document.querySelectorAll('.triage-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const type = e.currentTarget.dataset.type;
-            const subCatGrid = document.getElementById('sub-cat-grid');
-            subCatGrid.innerHTML = ''; // clear previous
-
-            if (type === 'civil') {
-                const cats = ['Family / Matrimonial', 'Property / Real Estate', 'Breach of Contract', 'Tort / Personal Injury'];
-                cats.forEach(c => {
-                    const b = document.createElement('button');
-                    b.className = 'btn secondary-btn';
-                    b.textContent = c;
-                    b.addEventListener('click', () => proceedToEvidence());
-                    subCatGrid.appendChild(b);
-                });
-            } else {
-                const cats = ['Petty Crime', 'Major Felony', 'White Collar'];
-                cats.forEach(c => {
-                    const b = document.createElement('button');
-                    b.className = 'btn secondary-btn';
-                    b.textContent = c;
-                    b.addEventListener('click', () => proceedToEvidence());
-                    subCatGrid.appendChild(b);
-                });
-            }
-
-            phaseA.style.display = 'none';
-            phaseB.style.display = 'block';
-            step2.classList.add('active');
-        });
+// ─── Screen Manager ───────────────────────────────────
+function show(id) {
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
     });
+    const el = document.getElementById(id);
+    el.style.display = 'flex';
+    el.classList.add('active');
+    window.scrollTo(0, 0);
+}
 
-    // Back from Phase B
-    document.getElementById('back-to-a').addEventListener('click', () => {
-        phaseB.style.display = 'none';
-        phaseA.style.display = 'block';
-        step2.classList.remove('active');
-    });
+// ─── State ────────────────────────────────────────────
+let currentType = null;      // 'civil' | 'criminal'
+let currentDomain = null;    // e.g. 'property', 'tort'
+let currentDifficulty = null;
+let currentCaseData = null;
+let chatHistory = [];
 
-    // --- Phase C: Evidence & Fact Finding ---
-    let chatHistoryData = [];
-    const chatHistoryEl = document.getElementById('chat-history');
-    const chatInput = document.getElementById('chat-input');
-    const chatSendBtn = document.getElementById('chat-send-btn');
-    const evidenceDropZone = document.getElementById('evidence-drop-zone');
+// ─── Sub-category data ────────────────────────────────
+const CIVIL_CATS = [
+    { icon: '🏠', label: 'Property / Rent', desc: 'Disputes about land, home, or rent payments', domain: 'property', difficulty: 'medium' },
+    { icon: '📄', label: 'Breach of Contract', desc: 'Someone did not honour a signed agreement', domain: 'contract', difficulty: 'easy' },
+    { icon: '👨‍👩‍👧', label: 'Family / Matrimonial', desc: 'Divorce, custody, adoption or maintenance', domain: 'family', difficulty: 'medium' },
+    { icon: '⚠️', label: 'Tort / Personal Injury', desc: 'Someone caused harm through negligence', domain: 'tort', difficulty: 'medium' },
+    { icon: '💼', label: 'Employment Dispute', desc: 'Wrongful termination, salary or workplace issues', domain: 'contract', difficulty: 'easy' },
+    { icon: '🤷', label: 'Other / Not Sure', desc: 'Describe it in your own words to the AI', domain: 'contract', difficulty: 'easy' },
+];
+const CRIMINAL_CATS = [
+    { icon: '🪙', label: 'Petty Crime', desc: 'Minor offences like trespass or public nuisance', domain: 'petty_crime', difficulty: 'easy' },
+    { icon: '👊', label: 'Assault / Hurt', desc: 'Physical harm caused by another person', domain: 'petty_crime', difficulty: 'medium' },
+    { icon: '💳', label: 'Fraud / Cheating', desc: 'Deception or financial fraud', domain: 'petty_crime', difficulty: 'medium' },
+    { icon: '🏠', label: 'Theft / Robbery', desc: 'Unlawful taking of your property', domain: 'petty_crime', difficulty: 'easy' },
+    { icon: '📱', label: 'Cyber Crime', desc: 'Online harassment, hacking or identity theft', domain: 'petty_crime', difficulty: 'hard' },
+    { icon: '🤷', label: 'Other Offence', desc: 'Describe it — JusticeEngine-01 will categorise', domain: 'petty_crime', difficulty: 'easy' },
+];
 
-    function proceedToEvidence() {
-        phaseB.style.display = 'none';
-        phaseC.style.display = 'grid';
-        step3.classList.add('active');
-        renderCase(currentCaseData);
-        
-        // Reset chat
-        chatHistoryData = [];
-        chatHistoryEl.innerHTML = '';
-        summonAiBtn.disabled = true;
-        chatInput.value = '';
-        
-        // Trigger first AI message
-        sendChatMessage("");
-    }
+// ─── Landing ──────────────────────────────────────────
+document.getElementById('enter-btn').addEventListener('click', () => show('screen-action'));
+document.getElementById('back-to-landing').addEventListener('click', () => show('screen-landing'));
 
-    async function sendChatMessage(userMessage) {
-        if (userMessage) {
-            appendChat('user', userMessage);
-            chatHistoryData.push({ role: 'user', content: userMessage });
-        }
-
-        try {
-            const res = await fetch('/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    case_id: currentCaseData.case_id,
-                    fact_pattern: currentCaseData.fact_pattern,
-                    user_message: userMessage,
-                    chat_history: chatHistoryData
-                })
-            });
-            const data = await res.json();
-            appendChat('ai', data.response);
-            chatHistoryData.push({ role: 'ai', content: data.response });
-            
-            // Enable draft resolution if AI is satisfied
-            if (chatHistoryData.length >= 4) {
-                summonAiBtn.disabled = false;
-            }
-        } catch(err) {
-            console.error(err);
-        }
-    }
-
-    function appendChat(role, text) {
-        const div = document.createElement('div');
-        div.style.padding = "0.5rem";
-        div.style.borderRadius = "4px";
-        div.style.fontSize = "0.9rem";
-        if (role === 'user') {
-            div.style.background = "rgba(59,130,246,0.3)";
-            div.style.marginLeft = "2rem";
-            div.innerHTML = `<strong>You:</strong> ${text}`;
-        } else {
-            div.style.background = "rgba(255,255,255,0.05)";
-            div.style.marginRight = "2rem";
-            div.style.borderLeft = "2px solid var(--accent-primary)";
-            div.innerHTML = `<strong>JusticeEngine-01:</strong> ${text}`;
-        }
-        chatHistoryEl.appendChild(div);
-        chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
-    }
-
-    chatSendBtn.addEventListener('click', () => {
-        const text = chatInput.value.trim();
-        if(text) {
-            chatInput.value = '';
-            sendChatMessage(text);
-        }
-    });
-
-    chatInput.addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') {
-            const text = chatInput.value.trim();
-            if(text) {
-                chatInput.value = '';
-                sendChatMessage(text);
-            }
-        }
-    });
-
-    // Evidence Locker drag and drop simulation
-    evidenceDropZone.addEventListener('click', () => {
-        sendChatMessage("[Uploaded Document: Signed Lease Agreement.pdf]");
-        // AI will naturally respond to this based on the mock logic
-    });
-
-    function renderCase(obs) {
-        caseTitleEl.textContent = `Case ID: ${obs.case_id}`;
-        caseDiffEl.textContent = obs.difficulty;
-        caseDiffEl.className = `badge ${obs.difficulty}`;
-        caseDiffEl.style.display = 'inline-block';
-
-        factPatternEl.textContent = obs.fact_pattern;
-
-        // Evidence Flags
-        evidenceFlagsEl.innerHTML = '';
-        if (obs.evidence_flags && obs.evidence_flags.length > 0) {
-            obs.evidence_flags.forEach(flag => {
-                const span = document.createElement('span');
-                span.className = 'tag';
-                span.textContent = flag;
-                evidenceFlagsEl.appendChild(span);
-            });
-        } else {
-            evidenceFlagsEl.innerHTML = '<span style="color:var(--text-secondary); font-size:0.85rem">None</span>';
-        }
-
-        // Statutes
-        statutesListEl.innerHTML = '';
-        obs.statutes.forEach(statute => {
-            const li = document.createElement('li');
-            li.textContent = statute;
-            statutesListEl.appendChild(li);
-        });
-
-        // Precedents
-        precedentsListEl.innerHTML = '';
-        obs.precedents.forEach((prec) => {
-            const item = document.createElement('div');
-            item.className = 'accordion-item';
-            item.innerHTML = `
-                <div class="accordion-title">${prec.case_id}: ${prec.title || 'Precedent'}</div>
-                <div class="accordion-content">
-                    <strong>Verdict:</strong> ${prec.verdict}<br>
-                    <strong>Rationale:</strong> ${prec.rationale}
-                </div>
-            `;
-            precedentsListEl.appendChild(item);
-        });
-    }
-
-    // --- Phase D: AI Resolution ---
-    summonAiBtn.addEventListener('click', async () => {
-        summonAiBtn.style.display = 'none';
-        aiLoading.style.display = 'block';
-
-        try {
-            const res = await fetch('/ai_judge', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    domain: currentDomain,
-                    difficulty: currentDifficulty
-                })
-            });
-            
-            if (!res.ok) throw new Error("Server returned " + res.status);
-            const data = await res.json();
-            
-            aiLoading.style.display = 'none';
-            aiOutput.style.display = 'block';
-            step4.classList.add('active');
-            
-            // Populate AI Output
-            document.getElementById('ai-case-id').textContent = currentCaseData.case_id;
-            document.getElementById('ai-verdict').textContent = data.action.verdict;
-            document.getElementById('ai-reasoning-text').textContent = data.action.reasoning_chain;
-            
-            // Save info for later display if accepted
-            window.currentEvaluation = data.evaluation.info;
-            
-        } catch (err) {
-            console.error(err);
-            summonAiBtn.style.display = 'block';
-            aiLoading.style.display = 'none';
-            alert('Failed to summon AI Judge. Ensure your API keys are valid.');
-        }
-    });
-
-    // --- Decision Matrix Actions ---
-    document.getElementById('btn-accept').addEventListener('click', () => {
-        decisionMatrix.style.display = 'none';
-        const info = window.currentEvaluation;
-        if(info) {
-            document.getElementById('composite-score').textContent = info.composite_reward.toFixed(2);
-            document.getElementById('score-logic').textContent = info.logic_score.toFixed(2);
-            document.getElementById('score-accuracy').textContent = info.accuracy_score.toFixed(2);
-            document.getElementById('score-fairness').textContent = info.fairness_score.toFixed(2);
-            document.getElementById('score-citation').textContent = info.citation_score.toFixed(2);
-        }
-        resultsOverlay.style.display = 'block';
-    });
-
-    document.getElementById('btn-refine').addEventListener('click', () => {
-        alert("The 'Refine Context' feature is a mock-up for this demo. In a real scenario, this would allow you to upload more evidence.");
-    });
-
-    document.getElementById('btn-escalate').addEventListener('click', () => {
-        escalationModal.style.display = 'flex';
-    });
-
-    // --- Modal Logic ---
-    document.getElementById('btn-cancel-transfer').addEventListener('click', () => {
-        escalationModal.style.display = 'none';
-    });
-
-    document.getElementById('btn-confirm-transfer').addEventListener('click', async () => {
-        // Collect checked reasons
-        const checks = document.querySelectorAll('#escalation-modal input[type="checkbox"]:checked');
-        const reasons = Array.from(checks).map(c => c.parentElement.textContent.trim());
-        
-        try {
-            await fetch('/escalate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    case_id: currentCaseData.case_id,
-                    fact_pattern: currentCaseData.fact_pattern,
-                    ai_verdict: document.getElementById('ai-verdict').textContent,
-                    ai_reasoning: document.getElementById('ai-reasoning-text').textContent,
-                    reasons: reasons.length > 0 ? reasons : ["User requested human oversight"]
-                })
-            });
-        } catch (e) {
-            console.error("Failed to push to escalate DB", e);
-        }
-
-        escalationModal.style.display = 'none';
-        decisionMatrix.style.display = 'none';
-        resultsOverlay.style.display = 'block';
-        resultsOverlay.innerHTML = `
-            <h3 style="color:var(--accent-danger)">Case Escalated</h3>
-            <p style="color:var(--text-secondary)">All documents and AI preliminary findings have been securely forwarded to a human presiding officer.</p>
-        `;
-    });
-
-    // Restart
-    resetBtn.addEventListener('click', () => {
-        if (currentDomain && currentDifficulty) {
-            loadCase(currentDomain, currentDifficulty);
-        }
-    });
+// ─── Action chooser ───────────────────────────────────
+document.getElementById('btn-file-case').addEventListener('click', () => show('screen-type'));
+document.getElementById('btn-withdraw').addEventListener('click', () => show('screen-withdraw'));
+document.getElementById('back-from-withdraw').addEventListener('click', () => show('screen-action'));
+document.getElementById('btn-confirm-withdraw').addEventListener('click', () => {
+    alert('Case withdrawal request submitted. Reference number sent to your registered contact.');
+    show('screen-action');
 });
+
+// ─── Civil / Criminal ─────────────────────────────────
+document.getElementById('back-to-action').addEventListener('click', () => show('screen-action'));
+document.getElementById('btn-civil').addEventListener('click', () => { currentType = 'civil'; buildSubcats(CIVIL_CATS); show('screen-subcat'); });
+document.getElementById('btn-criminal').addEventListener('click', () => { currentType = 'criminal'; buildSubcats(CRIMINAL_CATS); show('screen-subcat'); });
+document.getElementById('back-to-type').addEventListener('click', () => show('screen-type'));
+
+// ─── Sub-category builder ─────────────────────────────
+function buildSubcats(cats) {
+    const grid = document.getElementById('subcat-grid');
+    grid.innerHTML = '';
+    cats.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'subcat-card';
+        btn.innerHTML = `
+            <span class="sc-icon">${cat.icon}</span>
+            <strong>${cat.label}</strong>
+            <p>${cat.desc}</p>
+        `;
+        btn.addEventListener('click', () => {
+            currentDomain = cat.domain;
+            currentDifficulty = cat.difficulty;
+            loadDossier();
+        });
+        grid.appendChild(btn);
+    });
+}
+
+// ─── Load Case & Go to Dossier ────────────────────────
+async function loadDossier() {
+    show('screen-dossier');
+    document.getElementById('dossier-badge').textContent = currentType === 'civil' ? 'Civil Case' : 'Criminal Case';
+
+    // Reset right panel
+    document.getElementById('chat-panel').style.display = 'block';
+    document.getElementById('ai-thinking').style.display = 'none';
+    document.getElementById('verdict-panel').style.display = 'none';
+    document.getElementById('accepted-panel').style.display = 'none';
+    document.getElementById('escalated-panel').style.display = 'none';
+    document.getElementById('generate-btn').disabled = true;
+    document.getElementById('generate-hint').textContent = 'Answer the questions above to unlock the judgment';
+    document.getElementById('chat-messages').innerHTML = '';
+    chatHistory = [];
+
+    // Fetch case from backend
+    try {
+        const res = await fetch('/reset', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domain: currentDomain, difficulty: currentDifficulty })
+        });
+        const data = await res.json();
+        currentCaseData = data.observation;
+        renderDossierLeft(currentCaseData);
+        startFactFinding();
+    } catch(e) {
+        renderDossierLeft({ case_id: 'DEMO-001', fact_pattern: 'Could not load case from server.', evidence_flags: [], statutes: [] });
+        startFactFinding();
+    }
+}
+
+document.getElementById('back-to-subcat').addEventListener('click', () => show('screen-subcat'));
+
+// ─── Render left dossier ──────────────────────────────
+function renderDossierLeft(obs) {
+    document.getElementById('d-fact-pattern').textContent = obs.fact_pattern;
+
+    const evEl = document.getElementById('d-evidence');
+    evEl.innerHTML = '';
+    (obs.evidence_flags || []).forEach(f => {
+        const s = document.createElement('span');
+        s.textContent = f;
+        evEl.appendChild(s);
+    });
+    if (!obs.evidence_flags || obs.evidence_flags.length === 0) evEl.innerHTML = '<span style="color:var(--muted);font-size:0.85rem">None provided yet</span>';
+
+    const stEl = document.getElementById('d-statutes');
+    stEl.innerHTML = '';
+    (obs.statutes || []).forEach(s => {
+        const li = document.createElement('li');
+        li.textContent = s;
+        stEl.appendChild(li);
+    });
+}
+
+// ─── Fact Finding Chat ────────────────────────────────
+function startFactFinding() {
+    postAI("To help me build your legal dossier, I need to ask you a few short questions. Let's begin — could you confirm whether you have any written proof related to your case, such as a contract, receipt, or message?");
+}
+
+async function sendUserMessage(text) {
+    if (!text.trim()) return;
+    appendMsg('user', text);
+    chatHistory.push({ role: 'user', content: text });
+    document.getElementById('chat-input').value = '';
+
+    try {
+        const res = await fetch('/chat', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                case_id: currentCaseData ? currentCaseData.case_id : 'DEMO',
+                fact_pattern: currentCaseData ? currentCaseData.fact_pattern : '',
+                user_message: text,
+                chat_history: chatHistory
+            })
+        });
+        const data = await res.json();
+        postAI(data.response);
+        chatHistory.push({ role: 'ai', content: data.response });
+    } catch(e) {
+        postAI("I have gathered enough information. You may proceed to generate the AI judgment.");
+    }
+
+    // Unlock judgment after 4 messages
+    if (chatHistory.length >= 4) {
+        document.getElementById('generate-btn').disabled = false;
+        document.getElementById('generate-hint').textContent = '✅ Dossier ready — you may now generate the judgment';
+    }
+}
+
+function postAI(text) {
+    const div = document.createElement('div');
+    div.className = 'msg msg-ai';
+    div.innerHTML = `<strong>JusticeEngine-01</strong>${text}`;
+    document.getElementById('chat-messages').appendChild(div);
+    document.getElementById('chat-messages').scrollTop = 9999;
+}
+
+function appendMsg(role, text) {
+    const div = document.createElement('div');
+    div.className = role === 'user' ? 'msg msg-user' : 'msg msg-ai';
+    div.textContent = text;
+    document.getElementById('chat-messages').appendChild(div);
+    document.getElementById('chat-messages').scrollTop = 9999;
+}
+
+document.getElementById('chat-send').addEventListener('click', () => sendUserMessage(document.getElementById('chat-input').value));
+document.getElementById('chat-input').addEventListener('keypress', e => { if(e.key === 'Enter') sendUserMessage(document.getElementById('chat-input').value); });
+
+// Evidence locker click
+document.getElementById('locker-zone').addEventListener('click', () => {
+    sendUserMessage('[Document uploaded: Evidence file submitted to dossier]');
+});
+
+// ─── Generate Judgment ────────────────────────────────
+document.getElementById('generate-btn').addEventListener('click', async () => {
+    document.getElementById('chat-panel').style.display = 'none';
+    document.getElementById('ai-thinking').style.display = 'block';
+
+    try {
+        const res = await fetch('/ai_judge', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domain: currentDomain, difficulty: currentDifficulty })
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+
+        document.getElementById('ai-thinking').style.display = 'none';
+        document.getElementById('verdict-panel').style.display = 'block';
+
+        document.getElementById('v-case-id').textContent = currentCaseData ? currentCaseData.case_id : 'N/A';
+        document.getElementById('v-verdict').textContent = data.action.verdict;
+        document.getElementById('v-reasoning').textContent = data.action.reasoning_chain;
+        window.__evalInfo = data.evaluation.info;
+    } catch(e) {
+        document.getElementById('ai-thinking').style.display = 'none';
+        document.getElementById('chat-panel').style.display = 'block';
+        document.getElementById('generate-btn').disabled = false;
+        postAI("⚠️ I was unable to generate a judgment at this time. Please ensure the server API key is configured and try again.");
+    }
+});
+
+// ─── Accept ───────────────────────────────────────────
+document.getElementById('btn-accept').addEventListener('click', () => {
+    document.getElementById('verdict-panel').style.display = 'none';
+    const panel = document.getElementById('accepted-panel');
+    panel.style.display = 'block';
+
+    const info = window.__evalInfo;
+    const row = document.getElementById('metrics-row');
+    row.innerHTML = '';
+    if (info) {
+        const items = [
+            { label: 'Logic', val: info.logic_score },
+            { label: 'Accuracy', val: info.accuracy_score },
+            { label: 'Fairness', val: info.fairness_score },
+            { label: 'Citation', val: info.citation_score },
+        ];
+        items.forEach(i => {
+            const chip = document.createElement('div');
+            chip.className = 'metric-chip';
+            chip.innerHTML = `${i.label}: <span>${(i.val||0).toFixed(2)}</span>`;
+            row.appendChild(chip);
+        });
+    }
+});
+
+// ─── Escalate ─────────────────────────────────────────
+document.getElementById('btn-escalate').addEventListener('click', () => {
+    document.getElementById('escalation-modal').style.display = 'flex';
+});
+document.getElementById('modal-cancel').addEventListener('click', () => {
+    document.getElementById('escalation-modal').style.display = 'none';
+});
+document.getElementById('modal-confirm').addEventListener('click', async () => {
+    const reasons = ['r1','r2','r3','r4']
+        .filter(id => document.getElementById(id).checked)
+        .map(id => document.getElementById(id).parentElement.textContent.trim());
+
+    try {
+        await fetch('/escalate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                case_id: currentCaseData ? currentCaseData.case_id : 'N/A',
+                fact_pattern: currentCaseData ? currentCaseData.fact_pattern : '',
+                ai_verdict: document.getElementById('v-verdict').textContent,
+                ai_reasoning: document.getElementById('v-reasoning').textContent,
+                reasons: reasons.length ? reasons : ['User requested human oversight']
+            })
+        });
+    } catch(e) { console.error(e); }
+
+    document.getElementById('escalation-modal').style.display = 'none';
+    document.getElementById('verdict-panel').style.display = 'none';
+    document.getElementById('escalated-panel').style.display = 'block';
+});
+
+// ─── Init ─────────────────────────────────────────────
+show('screen-landing');

@@ -3,191 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Justice AI Portal - Smart Triage</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Justice AI — India's AI Legal Mediator</title>
+    <meta name="description" content="File your case, get a fair AI-powered legal opinion, and access justice without delays.">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="logo-container">
-                <span class="emoji">⚖️</span>
-                <h1>Justice AI</h1>
-                <p class="subtitle">Smart Triage System</p>
-            </div>
-            
-            <div class="sidebar-section">
-                <h3>Select Case File</h3>
-                <div id="task-list" class="task-list">
-                    <div class="loading-spinner">Loading...</div>
-                </div>
-            </div>
-        </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <header class="top-nav">
-                <div class="case-header">
-                    <h2 id="case-title">Select a Case to Begin</h2>
-                    <span id="case-difficulty" class="badge" style="display:none;"></span>
-                </div>
-                <button id="reset-btn" class="btn secondary-btn" disabled>🔄 Restart Triage</button>
-            </header>
-
-            <div id="empty-state" class="empty-state">
-                <span class="emoji-large">⚖️</span>
-                <h2>Welcome to the Justice AI Portal</h2>
-                <p>Select a case from the sidebar to begin the triage assessment.</p>
-            </div>
-
-            <div id="triage-flow" style="display: none;">
-                <!-- Progress Stepper -->
-                <div class="stepper">
-                    <div class="step active" id="step-1">1. Triage</div>
-                    <div class="step" id="step-2">2. Category</div>
-                    <div class="step" id="step-3">3. Evidence</div>
-                    <div class="step" id="step-4">4. Resolution</div>
-                </div>
-
-                <!-- Phase A: Civil vs Criminal -->
-                <div id="phase-a" class="phase-panel panel glass">
-                    <h3 class="phase-title">Current Status: Assessment Phase</h3>
-                    <p class="phase-subtitle">Please identify the nature of your legal matter to begin.</p>
-                    <div class="triage-buttons">
-                        <button class="triage-btn" data-type="civil">
-                            <span class="btn-title">[ CIVIL CASE ]</span>
-                            <span class="btn-desc">Disputes between individuals/orgs</span>
-                        </button>
-                        <button class="triage-btn" data-type="criminal">
-                            <span class="btn-title">[ CRIMINAL CASE ]</span>
-                            <span class="btn-desc">Offenses against the law/state</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Phase B: Sub-Category -->
-                <div id="phase-b" class="phase-panel panel glass" style="display: none;">
-                    <h3 class="phase-title">Select Sub-Category</h3>
-                    <div class="grid-buttons" id="sub-cat-grid">
-                        <!-- Populated by JS -->
-                    </div>
-                    <div class="mt-3">
-                        <button class="btn secondary-btn" id="back-to-a">Back</button>
-                    </div>
-                </div>
-
-                <!-- Phase C & D: Evidence & AI Resolution -->
-                <div id="phase-c" class="content-grid" style="display: none;">
-                    <!-- Left Panel: Case Details / Evidence -->
-                    <div class="case-details panel glass">
-                        <div class="section-block">
-                            <h3>Fact Pattern</h3>
-                            <p id="fact-pattern" class="text-block">...</p>
-                        </div>
-                        <div class="section-block">
-                            <h3>Evidence Flags</h3>
-                            <div id="evidence-flags" class="tags-container"></div>
-                        </div>
-                        <div class="section-block">
-                            <h3>Applicable Statutes</h3>
-                            <ul id="statutes-list" class="styled-list"></ul>
-                        </div>
-                        <div class="section-block">
-                            <h3>Precedents</h3>
-                            <div id="precedents-list" class="accordion"></div>
-                        </div>
-                    </div>
-
-                    <!-- Right Panel: AI Resolution -->
-                    <div class="judgment-panel panel glass">
-                        <div id="fact-finding-section">
-                            <h3 style="color:var(--accent-primary); margin-bottom: 0.5rem;">The Evidence Locker</h3>
-                            <div id="evidence-drop-zone" class="drop-zone mb-3" style="border: 2px dashed var(--border-color); padding: 1.5rem; text-align: center; border-radius: 8px; background: rgba(255,255,255,0.02); cursor: pointer; transition: all 0.2s;">
-                                <span class="emoji" style="font-size: 2rem;">📁</span>
-                                <p style="margin: 0.5rem 0 0.2rem; color: #cbd5e1;">Drag and drop photos or PDFs here</p>
-                                <small style="color: var(--text-secondary);">(Simulated upload for this demo)</small>
-                            </div>
-                            
-                            <h3 style="color:var(--accent-primary); margin-bottom: 0.5rem;">Fact-Finding Analysis</h3>
-                            <div id="chat-history" class="chat-history text-block mb-2" style="height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 6px; display: flex; flex-direction: column; gap: 0.5rem;">
-                                <!-- Chat messages will appear here -->
-                            </div>
-                            <div class="chat-input-group mb-3" style="display:flex; gap:0.5rem;">
-                                <input type="text" id="chat-input" placeholder="Answer the AI's question..." style="flex:1; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: white;">
-                                <button id="chat-send-btn" class="btn secondary-btn">Send</button>
-                            </div>
-                            
-                            <p class="hint-text mb-3" style="font-size: 0.85rem; color: var(--text-secondary);">The AI will unlock the drafting phase once enough facts are gathered.</p>
-                            <button id="summon-ai-btn" class="btn primary-btn w-100" disabled>Generate Draft Resolution</button>
-                        </div>
-
-                        <!-- AI Processing State -->
-                        <div id="ai-loading" class="ai-loading" style="display: none; text-align: center; padding: 2rem 0;">
-                            <div class="spinner" style="margin: 0 auto 1rem;">⚖️</div>
-                            <p id="ai-loading-text" style="color: var(--accent-primary); font-style: italic;">Compiling AI Judgment Summary...</p>
-                        </div>
-
-                        <!-- AI Output Panel -->
-                        <div id="ai-output" class="ai-output" style="display: none;">
-                            <div class="ai-header">
-                                ⚖️ AI Preliminary Resolution
-                                <span class="status-badge">Status: Draft Prepared</span>
-                            </div>
-                            
-                            <div class="ai-verdict-box">
-                                <div><strong>Case ID:</strong> <span id="ai-case-id"></span></div>
-                                <div class="mt-2"><strong>Recommended Verdict:</strong> <span id="ai-verdict" class="badge"></span></div>
-                            </div>
-                            
-                            <div class="ai-reasoning">
-                                <strong>Analysis:</strong>
-                                <p id="ai-reasoning-text" class="text-block ai-text-block"></p>
-                            </div>
-
-                            <!-- Decision Matrix -->
-                            <div id="decision-matrix" class="decision-matrix mt-3">
-                                <h4>Choose an Action:</h4>
-                                <div class="decision-buttons">
-                                    <button class="btn btn-success w-100 mb-2" id="btn-accept">✅ Accept AI Resolution</button>
-                                    <button class="btn btn-info w-100 mb-2" id="btn-refine">📝 Add More Context</button>
-                                    <button class="btn btn-danger outline w-100" id="btn-escalate">🧑‍⚖️ Request Human Judge</button>
-                                </div>
-                            </div>
-
-                            <!-- Results Overlay (After Accept) -->
-                            <div id="results-overlay" class="results-overlay mt-3" style="display: none;">
-                                <h3>Official Record Saved</h3>
-                                <div class="metrics-grid">
-                                    <div class="metric"><span class="metric-label">Logic</span><span id="score-logic">0.00</span></div>
-                                    <div class="metric"><span class="metric-label">Accuracy</span><span id="score-accuracy">0.00</span></div>
-                                    <div class="metric"><span class="metric-label">Fairness</span><span id="score-fairness">0.00</span></div>
-                                    <div class="metric"><span class="metric-label">Citation</span><span id="score-citation">0.00</span></div>
-                                </div>
-                                <div style="text-align:center; margin-top: 1rem; color:var(--accent-success); font-weight:bold;">
-                                    Composite Score: <span id="composite-score">0.00</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!--  SCREEN 1: THE LANDING PAGE                        -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="screen-landing" class="screen active">
+        <div class="landing-bg"></div>
+        <div class="landing-content">
+            <div class="emblem">⚖️</div>
+            <h1 class="portal-title">Justice AI</h1>
+            <p class="portal-sub">India's Impartial AI Legal Mediator</p>
+            <p class="portal-desc">
+                Get a fair, instant preliminary legal opinion — guided by the<br>
+                <strong>Constitution of India</strong> and the <strong>Bharatiya Nyaya Sanhita (BNS)</strong>.
+            </p>
+            <button id="enter-btn" class="btn-gold pulse">
+                Enter the Courtroom
+                <span class="btn-arrow">→</span>
+            </button>
+            <p class="landing-note">🔒 Confidential &nbsp;·&nbsp; Impartial &nbsp;·&nbsp; Not driven by money</p>
+        </div>
     </div>
 
-    <!-- Escalation Modal -->
-    <div id="escalation-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content glass panel">
-            <h3>Transitioning to Human Oversight...</h3>
-            <p>To help the Judge review your case faster, please tell us why you are escalating:</p>
-            <div class="checkbox-group mt-3">
-                <label class="checkbox-label"><input type="checkbox"> I disagree with the AI's interpretation of the law.</label>
-                <label class="checkbox-label"><input type="checkbox"> The AI missed a key piece of my evidence.</label>
-                <label class="checkbox-label"><input type="checkbox"> The case is too emotionally/legally complex for an algorithm.</label>
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!--  SCREEN 2: WHAT DO YOU WANT TO DO?                 -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="screen-action" class="screen">
+        <div class="court-nav">
+            <span class="nav-logo">⚖️ Justice AI</span>
+            <button class="btn-ghost" id="back-to-landing">← Leave</button>
+        </div>
+        <div class="screen-inner">
+            <h2 class="screen-title">How can the Court assist you?</h2>
+            <p class="screen-subtitle">Please select the nature of your visit</p>
+
+            <div class="action-cards">
+                <button class="action-card primary-card" id="btn-file-case">
+                    <div class="card-icon">📋</div>
+                    <div class="card-body">
+                        <h3>I want to file a case</h3>
+                        <p>Present your matter before the AI Judge for a preliminary legal opinion</p>
+                    </div>
+                    <span class="card-arrow">→</span>
+                </button>
+
+                <button class="action-card danger-card" id="btn-withdraw">
+                    <div class="card-icon">↩️</div>
+                    <div class="card-body">
+                        <h3>Withdraw my case</h3>
+                        <p>Cancel or retract a previously filed matter</p>
+                    </div>
+                    <span class="card-arrow">→</span>
+                </button>
             </div>
-            <div class="mt-4" style="display:flex; gap:10px;">
-                <button class="btn btn-danger w-100" id="btn-confirm-transfer">Confirm Transfer</button>
-                <button class="btn secondary-btn w-100" id="btn-cancel-transfer">Cancel</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!--  SCREEN 3: CIVIL OR CRIMINAL?                      -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="screen-type" class="screen">
+        <div class="court-nav">
+            <span class="nav-logo">⚖️ Justice AI</span>
+            <button class="btn-ghost" id="back-to-action">← Back</button>
+        </div>
+        <div class="screen-inner">
+            <div class="progress-strip">
+                <span class="ps-dot done">1</span>
+                <span class="ps-line done"></span>
+                <span class="ps-dot active">2</span>
+                <span class="ps-line"></span>
+                <span class="ps-dot">3</span>
+                <span class="ps-line"></span>
+                <span class="ps-dot">4</span>
+            </div>
+
+            <h2 class="screen-title">What type of case is this?</h2>
+            <p class="screen-subtitle">Choose the category that best describes your situation</p>
+
+            <div class="type-cards">
+                <button class="type-card" id="btn-civil" data-type="civil">
+                    <div class="type-icon">🤝</div>
+                    <h3>Civil Case</h3>
+                    <p>A dispute between two parties — a disagreement about money, property, contracts, family matters, or employment.</p>
+                    <div class="type-examples">
+                        <span>Rent dispute</span>
+                        <span>Cheque bounce</span>
+                        <span>Divorce</span>
+                        <span>Property</span>
+                    </div>
+                </button>
+
+                <button class="type-card" id="btn-criminal" data-type="criminal">
+                    <div class="type-icon">⚖️</div>
+                    <h3>Criminal Case</h3>
+                    <p>An act that is an offence against the law or the State — involving harm, theft, fraud, or other offences listed in the BNS.</p>
+                    <div class="type-examples">
+                        <span>Assault</span>
+                        <span>Fraud</span>
+                        <span>Theft</span>
+                        <span>Harassment</span>
+                    </div>
+                </button>
+            </div>
+
+            <div class="help-note">
+                <span>🤔</span>
+                <span>Not sure? <strong>Civil</strong> is usually between two people. <strong>Criminal</strong> usually involves the police or a crime.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!--  SCREEN 4: SUB-CATEGORY                            -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="screen-subcat" class="screen">
+        <div class="court-nav">
+            <span class="nav-logo">⚖️ Justice AI</span>
+            <button class="btn-ghost" id="back-to-type">← Back</button>
+        </div>
+        <div class="screen-inner">
+            <div class="progress-strip">
+                <span class="ps-dot done">1</span>
+                <span class="ps-line done"></span>
+                <span class="ps-dot done">2</span>
+                <span class="ps-line done"></span>
+                <span class="ps-dot active">3</span>
+                <span class="ps-line"></span>
+                <span class="ps-dot">4</span>
+            </div>
+
+            <h2 class="screen-title">What is your case about?</h2>
+            <p class="screen-subtitle">Select the option that is closest to your situation</p>
+
+            <div id="subcat-grid" class="subcat-grid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!--  SCREEN 5: THE DOSSIER (Fact Finding + AI)         -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="screen-dossier" class="screen">
+        <div class="court-nav">
+            <span class="nav-logo">⚖️ Justice AI</span>
+            <div style="display:flex; gap:1rem; align-items:center;">
+                <span id="dossier-badge" class="case-badge"></span>
+                <button class="btn-ghost" id="back-to-subcat">← Start Over</button>
+            </div>
+        </div>
+
+        <div class="dossier-layout">
+            <!-- Left: Case Facts (read-only) -->
+            <div class="dossier-left">
+                <div class="dossier-section">
+                    <h4 class="dossier-label">📄 Case Summary</h4>
+                    <p id="d-fact-pattern" class="dossier-text"></p>
+                </div>
+                <div class="dossier-section">
+                    <h4 class="dossier-label">🔍 Key Evidence Points</h4>
+                    <div id="d-evidence" class="evidence-chips"></div>
+                </div>
+                <div class="dossier-section">
+                    <h4 class="dossier-label">📜 Applicable Laws</h4>
+                    <ul id="d-statutes" class="law-list"></ul>
+                </div>
+            </div>
+
+            <!-- Right: Chat + AI output -->
+            <div class="dossier-right">
+                <!-- State A: Chat (Fact Finding) -->
+                <div id="chat-panel">
+                    <div class="chat-header">
+                        <span class="chat-avatar">⚖️</span>
+                        <div>
+                            <strong>JusticeEngine-01</strong>
+                            <p style="font-size:0.8rem; color:#94a3b8; margin:0;">AI Legal Analyst — Asking a few questions</p>
+                        </div>
+                    </div>
+
+                    <div id="chat-messages" class="chat-messages">
+                        <!-- populated by JS -->
+                    </div>
+
+                    <div id="locker-zone" class="locker-zone" title="Click to simulate uploading evidence document">
+                        <span style="font-size:1.5rem;">📁</span>
+                        <div>
+                            <strong>Evidence Locker</strong>
+                            <p style="font-size:0.8rem; margin:0; color:#94a3b8;">Click to add a document, photo or PDF</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-bar">
+                        <input id="chat-input" type="text" placeholder="Type your answer here...">
+                        <button id="chat-send" class="btn-send">Send</button>
+                    </div>
+
+                    <button id="generate-btn" class="btn-gold w-100 mt-2" disabled>
+                        ⚖️ Generate AI Judgment
+                    </button>
+                    <p id="generate-hint" class="generate-hint">Answer the questions above to unlock the judgment</p>
+                </div>
+
+                <!-- State B: AI Processing -->
+                <div id="ai-thinking" style="display:none;" class="ai-thinking-panel">
+                    <div class="thinking-orb">⚖️</div>
+                    <h3>Consulting the Constitution &amp; BNS...</h3>
+                    <p>JusticeEngine-01 is reviewing your dossier</p>
+                </div>
+
+                <!-- State C: AI Verdict -->
+                <div id="verdict-panel" style="display:none;">
+                    <div class="verdict-header">
+                        <span>⚖️ AI Preliminary Resolution</span>
+                        <span class="draft-tag">DRAFT</span>
+                    </div>
+
+                    <div class="verdict-body">
+                        <div class="verdict-row">
+                            <span class="vr-label">Case ID</span>
+                            <span id="v-case-id" class="vr-value"></span>
+                        </div>
+                        <div class="verdict-row">
+                            <span class="vr-label">Recommended Finding</span>
+                            <span id="v-verdict" class="verdict-pill"></span>
+                        </div>
+                    </div>
+
+                    <div class="verdict-analysis">
+                        <h4>📘 Legal Analysis</h4>
+                        <p id="v-reasoning"></p>
+                    </div>
+
+                    <div class="verdict-actions">
+                        <p class="verdict-action-label">What would you like to do?</p>
+                        <button id="btn-accept" class="verdict-btn accept">
+                            <span class="vbtn-icon">✅</span>
+                            <div>
+                                <strong>Accept &amp; Close Case</strong>
+                                <p>I accept this resolution. Please finalise and record.</p>
+                            </div>
+                        </button>
+                        <button id="btn-escalate" class="verdict-btn escalate">
+                            <span class="vbtn-icon">🧑‍⚖️</span>
+                            <div>
+                                <strong>Request Human Judge</strong>
+                                <p>I am not satisfied. I want a real judge to review this.</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- State D: Accepted -->
+                <div id="accepted-panel" style="display:none;" class="outcome-panel success">
+                    <div class="outcome-icon">✅</div>
+                    <h3>Case Resolved</h3>
+                    <p>The AI resolution has been accepted and formally recorded. No further action is required.</p>
+                    <div class="metrics-row" id="metrics-row"></div>
+                    <button class="btn-ghost mt-2" onclick="location.reload()">← Return to Homepage</button>
+                </div>
+
+                <!-- State E: Escalated -->
+                <div id="escalated-panel" style="display:none;" class="outcome-panel escalated">
+                    <div class="outcome-icon">🧑‍⚖️</div>
+                    <h3>Case Forwarded to Human Judge</h3>
+                    <p>Your complete case file and the AI's preliminary analysis have been securely sent to a human presiding officer for review.</p>
+                    <p style="font-size:0.85rem; color:#94a3b8; margin-top:1rem;">Note: Human review may take longer than AI resolution.</p>
+                    <button class="btn-ghost mt-2" onclick="location.reload()">← Return to Homepage</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!--  SCREEN: WITHDRAW CASE                             -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="screen-withdraw" class="screen">
+        <div class="court-nav">
+            <span class="nav-logo">⚖️ Justice AI</span>
+            <button class="btn-ghost" id="back-from-withdraw">← Back</button>
+        </div>
+        <div class="screen-inner" style="max-width:520px;">
+            <div class="withdraw-icon">↩️</div>
+            <h2 class="screen-title">Withdraw Your Case</h2>
+            <p class="screen-subtitle">Please enter your Case ID to proceed with withdrawal</p>
+
+            <div class="form-field">
+                <label>Case ID</label>
+                <input type="text" id="withdraw-id" placeholder="e.g. CIV-2026-0047">
+            </div>
+            <div class="form-field">
+                <label>Reason for Withdrawal (optional)</label>
+                <textarea id="withdraw-reason" rows="3" placeholder="e.g. Matter has been resolved out of court"></textarea>
+            </div>
+            <button class="btn-danger w-100" id="btn-confirm-withdraw">Confirm Withdrawal</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!--  ESCALATION MODAL                                  -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="escalation-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h3>Request Human Judge</h3>
+            <p>Please tell us why you are not satisfied with the AI's resolution. This will help the Judge review your case faster.</p>
+            <div class="check-list">
+                <label class="check-item"><input type="checkbox" id="r1"> I disagree with how the law was interpreted</label>
+                <label class="check-item"><input type="checkbox" id="r2"> Important evidence was not considered</label>
+                <label class="check-item"><input type="checkbox" id="r3"> The case is too complex for an AI</label>
+                <label class="check-item"><input type="checkbox" id="r4"> Other reason</label>
+            </div>
+            <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+                <button id="modal-confirm" class="btn-danger w-100">Confirm — Forward to Judge</button>
+                <button id="modal-cancel" class="btn-ghost w-100">Cancel</button>
             </div>
         </div>
     </div>
