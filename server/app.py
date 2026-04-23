@@ -30,7 +30,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from environment import JudicialEnv, JudicialAction
 from server.models import (
     ResetRequest, StepRequest,
-    ResetResponse, StepResponse, StateResponse, HealthResponse, AIJudgeResponse
+    ResetResponse, StepResponse, StateResponse, HealthResponse, AIJudgeResponse,
+    EscalateRequest, ChatRequest, ChatResponse
 )
 
 load_dotenv()
@@ -53,6 +54,9 @@ TASKS = [
 
 # Global results store
 RESULTS: dict = {"status": "starting", "scores": {}, "overall": 0.0}
+
+ESCALATED_CASES = []
+
 
 # ─── FastAPI App ──────────────────────────────────────────────
 
@@ -147,6 +151,39 @@ def ai_judge(request: ResetRequest):
     )
 
 
+@app.post("/escalate")
+def escalate_case(request: EscalateRequest):
+    ESCALATED_CASES.append(request.model_dump())
+    return {"status": "success"}
+
+@app.get("/api/escalated-cases")
+def get_escalated_cases():
+    return {"cases": ESCALATED_CASES}
+
+@app.get("/judge", include_in_schema=False)
+def judge_dashboard():
+    return FileResponse(os.path.join(ui_dir, "judge.html"))
+
+@app.get("/judge.js", include_in_schema=False)
+def judge_js():
+    return FileResponse(os.path.join(ui_dir, "judge.js"))
+
+@app.post("/chat", response_model=ChatResponse)
+def fact_finding_chat(request: ChatRequest):
+    # Simulate the AI asking 3-5 targeted questions
+    # In a real environment, we'd use the LLM to generate the next question.
+    # We use a simple lightweight response for demo purposes.
+    if len(request.chat_history) == 0:
+        return ChatResponse(response="To help me process this dossier, could you confirm if you have any written documents, such as a contract, lease, or formal complaint?")
+    elif len(request.chat_history) == 2:
+        return ChatResponse(response="Understood. Can you clarify the specific dates these events occurred? The timeline is critical under BNS.")
+    elif len(request.chat_history) >= 4:
+        return ChatResponse(response="Thank you. I have enough information to build the legal dossier. Please proceed to generate the Draft Resolution.")
+    
+    return ChatResponse(response="Could you elaborate on that point slightly more?")
+
+
+
 @app.get("/state", response_model=StateResponse)
 def get_state(domain: str = "contract", difficulty: str = "easy"):
     """Return current environment state."""
@@ -211,7 +248,7 @@ def log_end(success: bool, steps: int, score: float, rewards: list):
 
 
 def get_agent_action(obs, client: OpenAI) -> JudicialAction:
-    prompt = f"""You are an impartial, uncorruptible expert judge. Analyze the following legal case and deliver a structured verdict. 
+    prompt = f"""You are JusticeEngine-01, an impartial AI legal mediator designed to triage cases, analyze evidence, and generate preliminary legal opinions under the Constitution of India and BNS. Your goal is to filter straightforward cases and organize complex ones for human judges.
 You are strictly logical, not driven by money or emotional arguments. 
 You must base your reasoning on the Constitution of India, the Bharatiya Nyaya Sanhita (BNS) for criminal matters, and strictly follow the provided precedents. 
 Where relevant, provide brief comparisons to the US and UK judicial systems.

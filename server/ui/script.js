@@ -159,14 +159,101 @@ document.addEventListener('DOMContentLoaded', () => {
         step2.classList.remove('active');
     });
 
-    // --- Phase C: Evidence ---
+    // --- Phase C: Evidence & Fact Finding ---
+    let chatHistoryData = [];
+    const chatHistoryEl = document.getElementById('chat-history');
+    const chatInput = document.getElementById('chat-input');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const evidenceDropZone = document.getElementById('evidence-drop-zone');
+
     function proceedToEvidence() {
         phaseB.style.display = 'none';
         phaseC.style.display = 'grid';
         step3.classList.add('active');
         renderCase(currentCaseData);
-        summonAiBtn.disabled = false;
+        
+        // Reset chat
+        chatHistoryData = [];
+        chatHistoryEl.innerHTML = '';
+        summonAiBtn.disabled = true;
+        chatInput.value = '';
+        
+        // Trigger first AI message
+        sendChatMessage("");
     }
+
+    async function sendChatMessage(userMessage) {
+        if (userMessage) {
+            appendChat('user', userMessage);
+            chatHistoryData.push({ role: 'user', content: userMessage });
+        }
+
+        try {
+            const res = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    case_id: currentCaseData.case_id,
+                    fact_pattern: currentCaseData.fact_pattern,
+                    user_message: userMessage,
+                    chat_history: chatHistoryData
+                })
+            });
+            const data = await res.json();
+            appendChat('ai', data.response);
+            chatHistoryData.push({ role: 'ai', content: data.response });
+            
+            // Enable draft resolution if AI is satisfied
+            if (chatHistoryData.length >= 4) {
+                summonAiBtn.disabled = false;
+            }
+        } catch(err) {
+            console.error(err);
+        }
+    }
+
+    function appendChat(role, text) {
+        const div = document.createElement('div');
+        div.style.padding = "0.5rem";
+        div.style.borderRadius = "4px";
+        div.style.fontSize = "0.9rem";
+        if (role === 'user') {
+            div.style.background = "rgba(59,130,246,0.3)";
+            div.style.marginLeft = "2rem";
+            div.innerHTML = `<strong>You:</strong> ${text}`;
+        } else {
+            div.style.background = "rgba(255,255,255,0.05)";
+            div.style.marginRight = "2rem";
+            div.style.borderLeft = "2px solid var(--accent-primary)";
+            div.innerHTML = `<strong>JusticeEngine-01:</strong> ${text}`;
+        }
+        chatHistoryEl.appendChild(div);
+        chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+    }
+
+    chatSendBtn.addEventListener('click', () => {
+        const text = chatInput.value.trim();
+        if(text) {
+            chatInput.value = '';
+            sendChatMessage(text);
+        }
+    });
+
+    chatInput.addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') {
+            const text = chatInput.value.trim();
+            if(text) {
+                chatInput.value = '';
+                sendChatMessage(text);
+            }
+        }
+    });
+
+    // Evidence Locker drag and drop simulation
+    evidenceDropZone.addEventListener('click', () => {
+        sendChatMessage("[Uploaded Document: Signed Lease Agreement.pdf]");
+        // AI will naturally respond to this based on the mock logic
+    });
 
     function renderCase(obs) {
         caseTitleEl.textContent = `Case ID: ${obs.case_id}`;
@@ -278,7 +365,27 @@ document.addEventListener('DOMContentLoaded', () => {
         escalationModal.style.display = 'none';
     });
 
-    document.getElementById('btn-confirm-transfer').addEventListener('click', () => {
+    document.getElementById('btn-confirm-transfer').addEventListener('click', async () => {
+        // Collect checked reasons
+        const checks = document.querySelectorAll('#escalation-modal input[type="checkbox"]:checked');
+        const reasons = Array.from(checks).map(c => c.parentElement.textContent.trim());
+        
+        try {
+            await fetch('/escalate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    case_id: currentCaseData.case_id,
+                    fact_pattern: currentCaseData.fact_pattern,
+                    ai_verdict: document.getElementById('ai-verdict').textContent,
+                    ai_reasoning: document.getElementById('ai-reasoning-text').textContent,
+                    reasons: reasons.length > 0 ? reasons : ["User requested human oversight"]
+                })
+            });
+        } catch (e) {
+            console.error("Failed to push to escalate DB", e);
+        }
+
         escalationModal.style.display = 'none';
         decisionMatrix.style.display = 'none';
         resultsOverlay.style.display = 'block';

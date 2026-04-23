@@ -41,3 +41,20 @@ class HealthResponse(BaseModel):
 class AIJudgeResponse(BaseModel):
     action: Dict[str, Any]
     evaluation: StepResponse
+
+class EscalateRequest(BaseModel):
+    case_id: str
+    reasons: List[str]
+    ai_verdict: str
+    ai_reasoning: str
+    fact_pattern: str
+
+class ChatRequest(BaseModel):
+    case_id: str
+    fact_pattern: str
+    user_message: str
+    chat_history: List[Dict[str, str]] = []
+
+class ChatResponse(BaseModel):
+    response: str
+
