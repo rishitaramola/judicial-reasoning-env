@@ -83,6 +83,28 @@ R = 0.3·logic + 0.4·accuracy + 0.2·fairness + 0.1·citation
 
 ---
 
+## TRL GRPO Training (Hackathon Judges)
+
+To fulfill the Meta OpenEnv requirement for a full Reinforcement Learning loop, we have provided the `train.py` script. Because RL on LLMs requires significant VRAM, this should be run on a GPU instance (e.g., Google Colab).
+
+The script uses **Unsloth** for rapid loading and the **TRL `GRPOTrainer`** to optimize the model using our custom Verifiable Rewards (RLVR):
+1. **Format Reward:** Ensures the LLM outputs strict XML (`<action>`, `<verdict>`, `<reasoning_chain>`).
+2. **Logic & Citation Reward:** Scans the reasoning chain for logical depth and explicit citations of the Constitution and the BNS.
+3. **Accuracy Reward:** Hooks directly into `JudicialEnv.step()` to programmatically evaluate if the LLM reached the correct legal conclusion.
+
+**How to run it:**
+1. Open a Google Colab notebook (T4 GPU is sufficient).
+2. Clone this repository.
+3. Run the following:
+   ```bash
+   !pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
+   !pip install --no-deps xformers trl peft accelerate bitsandbytes datasets
+   !python train.py
+   ```
+4. *Local Testing:* If you want to verify the reward logic without a GPU, simply run `python test_reward_loop.py` locally.
+
+---
+
 ## Tasks
 
 | Task | Domain | Difficulty | Baseline Score | Description |
