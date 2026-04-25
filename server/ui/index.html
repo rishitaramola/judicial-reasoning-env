@@ -19,19 +19,18 @@
         <div class="landing-bg"></div>
         <div class="landing-content">
             <div class="emblem">⚖️</div>
-            <h1 class="portal-title">JusticeEngine-01</h1>
-            <p class="portal-sub">India's BNS Legal Mediation RL Environment</p>
+            <h1 class="portal-title">Justice AI</h1>
+            <p class="portal-sub">India's Impartial AI Legal Mediator</p>
             <p class="portal-desc">
-                A <strong>Gymnasium-compatible Reinforcement Learning environment</strong><br>
-                where LLM agents are trained to reason under the
-                <strong>Bharatiya Nyaya Sanhita (BNS) 2023</strong>.
+                Get a fair, instant preliminary legal opinion — guided by the<br>
+                <strong>Constitution of India</strong> and the <strong>Bharatiya Nyaya Sanhita (BNS)</strong>.
             </p>
             <div style="display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; margin-bottom:1.5rem;">
                 <button id="enter-btn" class="btn-gold pulse">
                     Enter the Courtroom
                     <span class="btn-arrow">→</span>
                 </button>
-                <a href="https://github.com/rishitaramola/judicial-reasoning-env" target="_blank" class="btn-ghost" style="text-decoration:none; display:flex; align-items:center; gap:0.5rem;">📄 GitHub / Docs</a>
+                <a href="https://github.com/rishitaramola/judicial-reasoning-env" target="_blank" class="btn-ghost" style="text-decoration:none; display:flex; align-items:center; gap:0.5rem; font-size:0.85rem;">📄 GitHub / Docs</a>
             </div>
             <p class="landing-note">🔒 Confidential &nbsp;·&nbsp; Impartial &nbsp;·&nbsp; Not driven by money</p>
 
@@ -260,6 +259,10 @@
             <p class="screen-subtitle" data-i18n="kyc_subtitle">To register a case, we need to verify your identity via DigiLocker.</p>
 
             <div class="kyc-form">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display:block; margin-bottom:0.5rem; color:var(--gold);">Full Name</label>
+                    <input type="text" id="victim-name-input" placeholder="Your full legal name" style="width: 100%; padding: 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white;">
+                </div>
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label style="display:block; margin-bottom:0.5rem; color:var(--gold);">Aadhar Number (12 digits)</label>
                     <input type="text" id="aadhar-input" placeholder="XXXX-XXXX-XXXX" style="width: 100%; padding: 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: white;" maxlength="14">

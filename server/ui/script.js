@@ -91,6 +91,8 @@ document.getElementById('btn-demo').addEventListener('click', async () => {
     document.getElementById('aadhar-input').value = '1234-5678-9012';
     document.getElementById('phone-input').value = '+91 9876543210';
     document.getElementById('relation-input').value = 'victim';
+    const nameEl = document.getElementById('victim-name-input');
+    if (nameEl) nameEl.value = 'Demo Citizen';
     document.getElementById('offender-name').value = 'DL 4C 1234 (Driver Name Unknown)';
     const summaryEl = document.getElementById('case-summary-input');
     if (summaryEl) summaryEl.value = 'A 17-year-old minor was driving his parent\'s car and jumped a red light, causing a collision with my vehicle. I suffered injuries and my car sustained Rs. 85,000 in damage. The accident occurred on 15 April 2026 at Ring Road, Delhi. A dashcam video has been uploaded as evidence.';
@@ -191,8 +193,9 @@ document.getElementById('btn-verify-kyc').addEventListener('click', () => {
         offenderInfo = [name, phone, addr].filter(Boolean).join(', ') || 'Not provided';
     }
 
-    // Save KYC Data including case summary
+    // Save KYC Data including case summary and victim name
     kycData = {
+        victimName: document.getElementById('victim-name-input')?.value?.trim() || '',
         aadhar: aadhar,
         phone: document.getElementById('phone-input').value,
         relation: document.getElementById('relation-input').value,
@@ -260,66 +263,46 @@ document.getElementById('btn-submit-evidence').addEventListener('click', () => {
         alert('Please select files to upload, or click Skip.');
         return;
     }
-    // Push to localStorage so police dashboard can read it
+    // Push to police queue in background — do NOT block the user
     const caseId = pushToPoliceQueue();
-    
-    // Update UI to show waiting state
+
+    // Show brief confirmation then proceed immediately
     const statusDiv = document.getElementById('upload-status');
     statusDiv.style.display = 'block';
     statusDiv.innerHTML = `
-        <div style="text-align:center; padding: 1rem;">
-            <div style="font-size:2rem; animation: spin 2s linear infinite;">⏳</div>
-            <div style="margin-top:1rem; color: #facc15; font-weight:600;">Awaiting Police Verification</div>
-            <div style="font-size:0.85rem; margin-top:0.5rem; color:#94a3b8;">Please open the <a href="/police" target="_blank" style="color:#3b82f6;">Police Module</a> to verify your evidence.</div>
+        <div style="text-align:center; padding:0.75rem; background:rgba(74,222,128,0.1); border-radius:8px;">
+            <div style="font-size:1.5rem;">📤</div>
+            <div style="margin-top:0.5rem; color:#4ade80; font-weight:600;">Evidence Submitted!</div>
+            <div style="font-size:0.8rem; margin-top:0.25rem; color:#94a3b8;">Case ID: ${caseId} — Police will verify in background.<br>Proceeding to your case dossier...</div>
         </div>
     `;
     document.getElementById('btn-submit-evidence').style.display = 'none';
     document.getElementById('btn-skip-evidence').style.display = 'none';
 
-    // Poll for status
+    // Go to dossier after brief delay
+    setTimeout(() => loadDossier(), 1800);
+
+    // Background poll: if police reject later, show a notification in dossier
     const pollTimer = setInterval(() => {
         const existing = JSON.parse(localStorage.getItem('evidence_submissions') || '[]');
         const myCase = existing.find(c => c.caseId === caseId);
-        if (myCase && (myCase.status === 'verified' || myCase.status === 'rejected')) {
+        if (myCase && myCase.status === 'rejected') {
             clearInterval(pollTimer);
-            if (myCase.status === 'verified') {
-                statusDiv.innerHTML = `
-                    <div style="text-align:center; padding: 1rem; background: rgba(74,222,128,0.1); border-radius: 8px;">
-                        <div style="font-size:2rem;">✅</div>
-                        <div style="margin-top:0.5rem; color: #4ade80; font-weight:600;">Evidence Verified</div>
-                        <div style="font-size:0.85rem; margin-top:0.25rem; color:#cbd5e1;">Proceeding to Dossier...</div>
-                    </div>
-                `;
-                setTimeout(() => loadDossier(), 1500);
-            } else {
-                statusDiv.innerHTML = `
-                    <div style="text-align:center; padding: 1rem; background: rgba(248,113,113,0.1); border-radius: 8px;">
-                        <div style="font-size:2rem;">❌</div>
-                        <div style="margin-top:0.5rem; color: #f87171; font-weight:600;">Evidence Rejected</div>
-                        <div style="font-size:0.85rem; margin-top:0.25rem; color:#cbd5e1;">The Police Module rejected your evidence.</div>
-                    </div>
-                `;
-                // Ask victim if they have additional evidence (Issue 4)
-                setTimeout(() => {
-                    const hasMore = confirm('❌ Your evidence was rejected by the police officer.\n\nDo you have any other evidence to submit?\n\nClick OK to upload new evidence, or Cancel to proceed without evidence.');
-                    if (hasMore) {
-                        // Reset upload state and let them try again
-                        uploadedFiles = [];
-                        document.getElementById('btn-submit-evidence').style.display = 'block';
-                        document.getElementById('btn-skip-evidence').style.display = 'block';
-                        document.getElementById('btn-skip-evidence').textContent = 'Skip (No Evidence)';
-                        statusDiv.style.display = 'none';
-                        const fileList = document.getElementById('upload-file-list');
-                        if (fileList) fileList.innerHTML = '';
-                        document.getElementById('evidence-file').value = '';
-                    } else {
-                        document.getElementById('btn-skip-evidence').style.display = 'block';
-                        document.getElementById('btn-skip-evidence').textContent = 'Proceed without Evidence';
-                    }
-                }, 500);
+            const hasMore = confirm('❌ Your evidence was rejected by the police officer.\n\nDo you have any other evidence to submit?\n\nClick OK to upload new evidence, or Cancel to continue without.');
+            if (hasMore) {
+                uploadedFiles = [];
+                show('screen-evidence');
+                document.getElementById('btn-submit-evidence').style.display = 'block';
+                document.getElementById('btn-skip-evidence').style.display = 'block';
+                document.getElementById('btn-skip-evidence').textContent = 'Skip (No Evidence)';
+                statusDiv.style.display = 'none';
+                const fileList = document.getElementById('upload-file-list');
+                if (fileList) fileList.innerHTML = '';
+                document.getElementById('evidence-file').value = '';
             }
         }
-    }, 1000);
+        if (myCase && myCase.status === 'verified') clearInterval(pollTimer);
+    }, 3000);
 });
 
 function pushToPoliceQueue() {
@@ -420,6 +403,7 @@ function printLetter(type, data) {
                 <tr><td>Registered On</td><td><strong>${timestamp}</strong></td></tr>
                 <tr><td>Case Type</td><td><strong>${currentType ? currentType.toUpperCase() : 'N/A'}</strong></td></tr>
                 <tr><th colspan="2" style="background:#f1f5f9; padding:0.5rem; text-align:left;">Petitioner KYC & Offender Info</th></tr>
+                <tr><td>Petitioner Name</td><td><strong>${kycData.victimName || 'Not provided'}</strong></td></tr>
                 <tr><td>Aadhar (DigiLocker KYC)</td><td><strong>${kycData.aadhar || 'Verified (Internal)'}</strong></td></tr>
                 <tr><td>Contact Phone</td><td><strong>${kycData.phone || 'N/A'}</strong></td></tr>
                 <tr><td>Petitioner Role</td><td><strong>${kycData.relation || 'N/A'}</strong></td></tr>
