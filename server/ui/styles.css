@@ -439,3 +439,18 @@ body {
     #v-council-cards { grid-template-columns: 1fr !important; }
 }
 
+/* === LEGAL REFERENCE LINKS === */
+.ref-link {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.3rem 0.8rem; border-radius: 20px;
+    font-size: 0.72rem; font-weight: 600; text-decoration: none;
+    transition: opacity 0.2s, transform 0.15s;
+    cursor: pointer;
+}
+.ref-link:hover { opacity: 0.85; transform: translateY(-1px); }
+.ref-ik  { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+.ref-cm  { background: rgba(139,92,246,0.15); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.3); }
+.ref-prs { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+.ref-ic  { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+.ref-sc  { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+

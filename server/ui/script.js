@@ -691,6 +691,9 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
         window.__aiVerdict   = data.action.verdict;
         window.__aiReasoning = data.action.reasoning_chain;
 
+        // ─── Populate Legal Reference Links ───────────────────────
+        _showLegalRefs(kycData.caseSummary || obs_fact_pattern || '');
+
     } catch(e) {
         // ─── OFFLINE DEMO FALLBACK ─────────────────────────────
         // Shows a realistic mock verdict when the API key is missing or rate-limited
@@ -758,8 +761,21 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
         window.__aiVerdict   = mockVerdict;
         window.__aiReasoning = mockReasoning;
         window.__evalInfo    = { logic_score: 0.92, accuracy_score: 0.95, fairness_score: 1.0, citation_score: 0.8 };
+        _showLegalRefs(kycData.caseSummary || '');
     }
 });
+
+// ─── Legal Reference Link Helper ─────────────────────────────
+function _showLegalRefs(caseText) {
+    const q = encodeURIComponent((caseText || '').slice(0, 80).trim() + ' India');
+    const qPRS = encodeURIComponent((caseText || '').slice(0, 60).trim());
+    const el = document.getElementById('v-legal-refs');
+    if (!el) return;
+    document.getElementById('ref-ikanoon').href = `https://indiankanoon.org/search/?formInput=${q}`;
+    document.getElementById('ref-casemine').href = `https://www.casemine.com/search#query=${q}`;
+    document.getElementById('ref-prs').href      = `https://prsindia.org/billtrack?q=${qPRS}`;
+    el.style.display = 'block';
+}
 
 // ─── Accept ───────────────────────────────────────────
 document.getElementById('btn-accept').addEventListener('click', () => {

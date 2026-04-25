@@ -61,6 +61,14 @@ else:
 
 CHAT_MODEL = "meta-llama/Llama-3.3-70B-Instruct" if HF_TOKEN else "llama-3.3-70b-versatile"
 
+# ─── Legal Database Config ────────────────────────────────────
+# Indian Kanoon API (free — register at https://api.indiankanoon.org/)
+IK_TOKEN = os.environ.get("IK_TOKEN", "")  # User must add this to .env
+# Casemine & PRS India are used as reference links only (no server-side key needed)
+CASEMINE_SEARCH  = "https://www.casemine.com/search#query="
+IKANOON_SEARCH   = "https://indiankanoon.org/search/?formInput="
+PRS_SEARCH       = "https://prsindia.org/billtrack?q="
+
 # ─── True Multi-Model Council ─────────────────────────────────
 # Three completely independent AI models deliberate in parallel
 COUNCIL_AGENTS = [
@@ -432,16 +440,50 @@ def log_end(success: bool, steps: int, score: float, rewards: list):
     print(f"[END] success={success} steps={steps} score={score:.4f} rewards={rewards}", flush=True)
 
 
-def _call_council_member(agent: dict, obs, is_criminal: bool) -> dict:
+def _fetch_indian_kanoon_precedents(query: str, max_results: int = 3) -> str:
+    """Fetch real case law from Indian Kanoon API to ground the agents in real precedents.
+    Returns a formatted string with case titles and headnotes, or empty string on failure."""
+    if not IK_TOKEN:
+        return ""  # Skip if user hasn't configured IK_TOKEN
+    try:
+        import urllib.request
+        import urllib.parse
+        url = "https://api.indiankanoon.org/search/"
+        data = urllib.parse.urlencode({"formInput": query, "pagenum": 0}).encode()
+        req = urllib.request.Request(url, data=data,
+                                     headers={"Authorization": f"Token {IK_TOKEN}",
+                                              "Content-Type": "application/x-www-form-urlencoded"})
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            result = json.loads(resp.read())
+        docs = result.get("docs", [])[:max_results]
+        if not docs:
+            return ""
+        lines = ["\n[LIVE INDIAN KANOON PRECEDENTS]"]
+        for d in docs:
+            lines.append(f"- {d.get('title', 'Untitled')} ({d.get('publishdate', 'n/a')[:4]}): {d.get('headline', '')[:200]}")
+        return "\n".join(lines)
+    except Exception as ex:
+        print(f"IK fetch failed (non-critical): {ex}")
+        return ""
+
+def _call_council_member(agent: dict, obs, is_criminal: bool, live_precedents: str = "") -> dict:
     """Call one council member model and return their structured legal argument."""
     client = OpenAI(api_key=HF_TOKEN or GROQ_API_KEY, base_url=HF_BASE_URL if HF_TOKEN else "https://api.groq.com/openai/v1")
     verdict_opts = '"forward_to_judge"' if is_criminal else '"liable", "not_liable", or "partial_liability"'
-    task_note = (
-        "TASK: This is a CRIMINAL case. Do NOT pass final judgment. Identify the BNS section, assess evidence, "
-        "and recommend forward_to_judge with your reasoning."
-        if is_criminal else
-        "TASK: This is a CIVIL case. Analyze through your specialized legal perspective and state your verdict."
+    cpc_note = (
+        "CPC REFERENCE: In complex questions of law the court may refer to a higher court (CPC Sec 113). "
+        "A party may apply for Review of judgment if there is an error apparent on the record (CPC Order 47). "
+        "A Revision petition lies to the High Court for error of jurisdiction or material irregularity (CPC Sec 115)."
     )
+    task_note = (
+        f"TASK: This is a CRIMINAL case. Do NOT pass final judgment. Identify the BNS section, assess evidence, "
+        f"and recommend forward_to_judge with your reasoning.\n{cpc_note}"
+        if is_criminal else
+        f"TASK: This is a CIVIL case. Analyze through your specialized legal perspective and state your verdict.\n{cpc_note}"
+    )
+    precedents_section = json.dumps(obs.precedents[:3], indent=2)
+    if live_precedents:
+        precedents_section += live_precedents
     prompt = f"""{agent['persona']}
 
 CASE FACTS:
@@ -450,8 +492,8 @@ CASE FACTS:
 APPLICABLE STATUTES:
 {chr(10).join(obs.statutes)}
 
-PRECEDENTS:
-{json.dumps(obs.precedents[:3], indent=2)}
+PRECEDENTS (verified case law):
+{precedents_section}
 
 EVIDENCE: {', '.join(obs.evidence_flags) if obs.evidence_flags else 'None'}
 
@@ -560,10 +602,16 @@ def get_agent_action(obs, _unused=None) -> tuple:
     """True multi-model judicial council: 3 agents in parallel, then Chief Justice synthesizes."""
     is_criminal = obs.domain == "petty_crime"
 
+    # Fetch live Indian Kanoon precedents once (shared across all agents)
+    ik_query = f"{obs.fact_pattern[:120]} India"
+    live_precedents = _fetch_indian_kanoon_precedents(ik_query)
+    if live_precedents:
+        print(f"[IK] Live precedents fetched: {len(live_precedents)} chars")
+
     # Phase 1: All 3 council members deliberate IN PARALLEL
     council_votes = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        futures = {executor.submit(_call_council_member, agent, obs, is_criminal): agent for agent in COUNCIL_AGENTS}
+        futures = {executor.submit(_call_council_member, agent, obs, is_criminal, live_precedents): agent for agent in COUNCIL_AGENTS}
         for future in concurrent.futures.as_completed(futures):
             try:
                 council_votes.append(future.result(timeout=45))
