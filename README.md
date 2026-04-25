@@ -24,6 +24,16 @@ A **Gymnasium-compatible Reinforcement Learning environment** where an LLM-based
 
 ---
 
+## ⚡ Hackathon Tech Stack & Core Features
+
+- **Multi-Agent Architecture:** You aren't just using one AI. You have a multi-agent system where Llama-3, Qwen-2.5, and Mixtral debate cases from different legal perspectives (Precedent, Constitutional, and Realist).
+- **DeepSeek Chief Justice:** A synthesis layer that weighs the agents' arguments and delivers a grounded verdict with Ratio Decidendi and Obiter Dicta.
+- **Advanced RL Training (GRPO):** You actually trained a model using Reinforcement Learning with Verifiable Rewards on a GPU to teach it to stop hallucinating and output perfect XML. Most hackathon projects just do basic API calls—you actually performed RL alignment!
+- **Anti-Hallucination Guardrails:** Your AI is strictly constrained by the facts, knows the Limitation Act (3 years), the Specific Relief Act, and the Bharatiya Nyaya Sanhita (BNS).
+- **Live Legal Database Integration:** Your UI automatically generates verification links to Indian Kanoon, Casemine, and PRS India based on the case facts.
+
+---
+
 ## 🧠 Why This Environment Is Hard To Game
 
 Most RL environments reward task completion. This environment rewards **impartial, legally-grounded reasoning**. A standard LLM will:

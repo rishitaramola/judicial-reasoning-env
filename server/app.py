@@ -45,15 +45,15 @@ HF_TOKEN     = os.environ.get("HF_TOKEN", "")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 HF_BASE_URL  = "https://api-inference.huggingface.co/v1/"
 
-# Primary API config (used for /chat endpoint)
-if HF_TOKEN:
-    API_KEY      = HF_TOKEN
-    API_BASE_URL = HF_BASE_URL
-    print("OK: Hugging Face Multi-Agent Council active via HF_TOKEN")
-elif GROQ_API_KEY:
+# Primary API config — GROQ preferred (faster, more reliable), HF as fallback
+if GROQ_API_KEY:
     API_KEY      = GROQ_API_KEY
     API_BASE_URL = "https://api.groq.com/openai/v1"
-    print(f"OK: GROQ fallback active ({GROQ_API_KEY[:8]}...)")
+    print(f"OK: GROQ multi-agent council active ({GROQ_API_KEY[:8]}...)")
+elif HF_TOKEN:
+    API_KEY      = HF_TOKEN
+    API_BASE_URL = HF_BASE_URL
+    print("OK: Hugging Face fallback active via HF_TOKEN")
 else:
     API_KEY = ""
     API_BASE_URL = ""
@@ -74,43 +74,47 @@ PRS_SEARCH       = "https://prsindia.org/billtrack?q="
 COUNCIL_AGENTS = [
     {
         "name": "Agent 1 — The Precedent Analyst",
-        "model": "meta-llama/Llama-3.3-70B-Instruct",
+        "model": "llama-3.3-70b-versatile",           # Best Llama on GROQ
         "persona": (
             "You are the Precedent Analyst on the AI Judicial Council. "
-            "You reason EXCLUSIVELY through established Indian case law and statutory frameworks (like the Specific Relief Act 1963 for property/deposits, or the Limitation Act 1963). "
+            "You reason through established Indian case law and statutory frameworks. "
             "CRITICAL RULES: \n"
-            "1. NEVER hallucinate or invent facts, damages, or monetary amounts not explicitly provided in the CASE FACTS. If the facts state Rs 10,000, you must strictly use Rs 10,000.\n"
-            "2. Always consider if the claim is within the limitation period (e.g., 3 years for recovery of money).\n"
-            "3. Do not cite overly broad landmark cases (like Hadley v Baxendale) for simple, direct refunds. Focus on specific, direct statutory rights."
+            "1. NEVER hallucinate facts or monetary amounts not in the CASE FACTS.\n"
+            "2. Indian Contract Act Section 73 applies to ALL breach of contract claims including employment. You do NOT need a pre-defined penalty clause — Section 73 lets the court assess actual loss (lost salary, opportunity cost). NEVER say Section 73 doesn't apply because no amount is mentioned — this is a fundamental legal error.\n"
+            "3. For employment wrongful termination: the Industrial Disputes Act 1947 (Section 2A, 25F) is PRIMARY over the Indian Contract Act. If the employee qualifies as a 'workman', Section 25F mandates 1-month notice or retrenchment compensation regardless of the reason.\n"
+            "4. If 'personal demands' suggest sexual harassment, cite the POSH Act 2013 and direct to the Internal Committee.\n"
+            "5. Limitation period: 3 years from date of breach for contract claims."
         )
     },
     {
         "name": "Agent 2 — The Constitutional Scholar",
-        "model": "Qwen/Qwen2.5-72B-Instruct",
+        "model": "mixtral-8x7b-32768",              # Mixtral on GROQ
         "persona": (
             "You are the Constitutional Scholar on the AI Judicial Council. "
-            "You reason through Constitutional law, Fundamental Rights, and statutory compliance (BNS, CPC, Indian Contract Act). "
+            "You reason through Constitutional law, Fundamental Rights, and statutory compliance. "
             "CRITICAL RULES: \n"
-            "1. STRICTLY adhere to the facts provided. Do not invent pecuniary losses.\n"
-            "2. Note that Section 89 of the CPC encourages mediation, but it is NOT strictly mandated for standard residential disputes unless specified by commercial courts.\n"
-            "3. Ensure the legal basis directly matches the nature of the dispute (e.g., a security deposit is held in trust, it is not subject to market-price speculation)."
+            "1. STRICTLY adhere to the facts provided. Do not invent amounts.\n"
+            "2. For employment cases: Article 21 (Right to Livelihood) and Article 14 (Right to Equality) are engaged when a worker is arbitrarily dismissed. Also check if the POSH Act 2013 applies.\n"
+            "3. Industrial Disputes Act 1947 Section 25F: Any 'workman' dismissed without 1 month notice or retrenchment compensation has a right to approach the Labour Court.\n"
+            "4. Section 73 of the Indian Contract Act applies to employment breaches — the absence of a specified penalty does NOT exclude it. The remedy is actual loss assessed by the court."
         )
     },
     {
         "name": "Agent 3 — The Legal Realist",
-        "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+        "model": "llama-3.1-70b-versatile",          # Second Llama variant on GROQ
         "persona": (
             "You are the Legal Realist on the AI Judicial Council. "
-            "You analyze cases through real-world impact, socioeconomic context, and the spirit of justice. "
+            "You analyze cases through real-world impact and practical justice. "
             "CRITICAL RULES: \n"
-            "1. Do NOT invent or alter the monetary values provided in the prompt.\n"
-            "2. Provide practical, direct resolutions. Avoid over-complicating simple civil disputes (like unreturned rent deposits) with corporate legal theories.\n"
-            "3. Balance legal technicality with equitable outcomes, ensuring the remedy makes logical sense based on the precise facts given."
+            "1. Do NOT invent or alter facts or values.\n"
+            "2. For employment cases: identify the FASTEST and MOST EFFECTIVE forum — Internal Committee (IC) under POSH Act if harassment, Labour Court under IDA 1947 if wrongful retrenchment, or Civil Court for damages. A Labour Court can ORDER reinstatement; a Civil Court cannot.\n"
+            "3. Section 73 Indian Contract Act: always applicable for employment breach. Courts calculate actual loss (lost salary x months unemployed). Do NOT say it doesn't apply without a fixed penalty.\n"
+            "4. Balance legal technicality with equitable outcomes and practical next steps for the complainant."
         )
     }
 ]
-# Chief Justice synthesizes all 3 arguments
-CHIEF_JUSTICE_MODEL = "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
+# Chief Justice synthesizes all 3 arguments — use best available GROQ model
+CHIEF_JUSTICE_MODEL = "llama-3.3-70b-versatile"
 
 MAX_TOTAL_REWARD       = 1.0
 SUCCESS_SCORE_THRESHOLD = 0.5
@@ -202,14 +206,37 @@ def ai_judge(request: ResetRequest):
 
     # Override with custom user facts
     if request.custom_facts:
-        obs.fact_pattern = request.custom_facts
+        # Use ONLY the user's text — never append the template case
+        obs.fact_pattern = request.custom_facts.strip()
         obs.case_id = "USR-CUSTOM"
         if request.custom_evidence:
             obs.evidence_flags = request.custom_evidence
-            
+
+        # Determine correct statutes based on domain
+        domain_statutes = {
+            "labor":          [
+                "Industrial Disputes Act 1947, Section 2A - Wrongful dismissal of individual workman",
+                "Industrial Disputes Act 1947, Section 25F - Mandatory retrenchment compensation (1 month notice or pay)",
+                "Sexual Harassment of Women at Workplace (POSH) Act 2013 - If demands were of a sexual/personal nature",
+                "Indian Contract Act 1872, Section 73 - Compensation for loss caused by breach of employment contract",
+                "Bharatiya Nyaya Sanhita (BNS) 2023, Section 351 - Criminal intimidation (if threats were made)",
+            ],
+            "petty_crime":    ["Bharatiya Nyaya Sanhita (BNS) 2023",
+                               "Bharatiya Nagarik Suraksha Sanhita (BNSS) 2023"],
+            "tort":           ["Indian Contract Act 1872, Section 73 - Compensation for loss or damage",
+                               "Motor Vehicles Act 1988 / BNS 2023"],
+            "property":       ["Transfer of Property Act 1882",
+                               "Specific Relief Act 1963"],
+            "contract":       ["Indian Contract Act 1872, Section 73 - Compensation for loss or damage caused by breach",
+                               "Specific Relief Act 1963"],
+            "administrative": ["Principles of Natural Justice - Audi Alteram Partem",
+                               "Administrative Tribunals Act 1985"],
+        }
+        obs.statutes = domain_statutes.get(request.domain, obs.statutes)
+
         # Mock env.current_case so env.step() evaluation doesn't crash
         env.current_case["case_id"] = "USR-CUSTOM"
-        env.current_case["fact_pattern"] = request.custom_facts
+        env.current_case["fact_pattern"] = request.custom_facts.strip()
         env.current_case["evidence"] = request.custom_evidence or []
         env.current_case["gold_label_verdict"] = "forward_to_judge" if request.domain == "petty_crime" else "liable"
         env.current_case["expert_verdict"] = env.current_case["gold_label_verdict"]
@@ -479,7 +506,10 @@ def _fetch_indian_kanoon_precedents(query: str, max_results: int = 3) -> str:
 
 def _call_council_member(agent: dict, obs, is_criminal: bool, live_precedents: str = "") -> dict:
     """Call one council member model and return their structured legal argument."""
-    client = OpenAI(api_key=HF_TOKEN or GROQ_API_KEY, base_url=HF_BASE_URL if HF_TOKEN else "https://api.groq.com/openai/v1")
+    # Always use GROQ when available — HF Inference API has connectivity issues
+    council_api_key = GROQ_API_KEY or HF_TOKEN
+    council_base_url = "https://api.groq.com/openai/v1" if GROQ_API_KEY else HF_BASE_URL
+    client = OpenAI(api_key=council_api_key, base_url=council_base_url)
     verdict_opts = '"forward_to_judge"' if is_criminal else '"liable", "not_liable", or "partial_liability"'
     cpc_note = (
         "CPC REFERENCE: In complex questions of law the court may refer to a higher court (CPC Sec 113). "
@@ -542,7 +572,10 @@ Respond ONLY with valid JSON (no markdown, no preamble):
 
 def _synthesize_verdict(council_votes: list, obs, is_criminal: bool) -> dict:
     """Chief Justice DeepSeek reads all 3 arguments and delivers the final verdict."""
-    client = OpenAI(api_key=HF_TOKEN or GROQ_API_KEY, base_url=HF_BASE_URL if HF_TOKEN else "https://api.groq.com/openai/v1")
+    # Always use GROQ when available — HF Inference API has connectivity issues
+    council_api_key = GROQ_API_KEY or HF_TOKEN
+    council_base_url = "https://api.groq.com/openai/v1" if GROQ_API_KEY else HF_BASE_URL
+    client = OpenAI(api_key=council_api_key, base_url=council_base_url)
     deliberation = ""
     for v in council_votes:
         deliberation += f"\n─── {v['name']} ({v['model']}) ───\n"
@@ -555,36 +588,42 @@ def _synthesize_verdict(council_votes: list, obs, is_criminal: bool) -> dict:
     extra = "Set verdict to forward_to_judge." if is_criminal else "Choose the verdict backed by the strongest legal arguments."
     synthesis_prompt = f"""You are the Chief Justice of the AI Judicial Council for Indian courts. Three expert agents have deliberated on this case.
 
-CASE FACTS (use ONLY these facts — do NOT invent or modify any monetary amounts, names, or events):
+CASE FACTS (use ONLY these facts — do NOT invent or modify any amounts, names, or events):
 {obs.fact_pattern[:600]}
+
+APPLICABLE STATUTES: {chr(10).join(obs.statutes)}
 
 COUNCIL DELIBERATION:{deliberation}
 
-STRICT RULES FOR YOUR FINAL JUDGMENT:
-1. NEVER invent or modify monetary amounts. Use ONLY the exact figures stated in the CASE FACTS above.
-2. For civil money recovery (deposits, loans, dues): cite the Specific Relief Act 1963 alongside Section 73 of the Indian Contract Act 1872. Do NOT apply "Hadley v Baxendale" unless there is genuine consequential loss beyond the direct amount.
-3. Section 89 CPC: This encourages mediation — it does NOT mandate it for standard residential civil disputes. Do not state it is mandatory unless it is a commercial court matter.
-4. Always note if the claim is within the Limitation Act 1963 period (3 years for money recovery).
-5. The ratio_decidendi must be specific to the FACTS, not a generic template.
+STRICT LEGAL RULES — READ CAREFULLY BEFORE ANSWERING:
+1. Indian Contract Act 1872, Section 73: This section applies to ALL breach of contract claims. You do NOT need a pre-specified monetary penalty in the contract to apply Section 73. The court has the power to assess and award compensation for actual loss suffered (lost salary, lost income, mental distress). NEVER say Section 73 does not apply because no monetary amount is mentioned — that is a fundamental legal error.
+2. For EMPLOYMENT / WORKPLACE cases: The PRIMARY statutes are the Industrial Disputes Act 1947 (wrongful termination, retrenchment compensation under Section 25F) and the POSH Act 2013 (if the demands were of a sexual or personal nature). Cite these BEFORE the Indian Contract Act.
+3. Section 89 CPC encourages mediation — it does NOT mandate it for standard employment disputes.
+4. Limitation Act 1963: 3 years for breach of contract claims from the date of the breach.
+5. POSH Act 2013: If 'personal demands' could be sexual in nature, the employee should be directed to the Internal Committee (IC) of the company, OR the Local Complaints Committee if no IC exists. This is a faster route than civil courts and can result in reinstatement.
+6. Industrial Disputes Act 1947: If the complainant qualifies as a 'workman', termination without 1 month notice or retrenchment compensation (Section 25F) is illegal regardless of the reason given.
+7. The 'ratio_decidendi' field is used here as the key legal principle governing this case. Add a note: '(Note: This is an AI summary, not a binding judicial precedent.)'
 {extra}
 
 Your task:
 1. Weigh the arguments from all three agents and select the most legally sound position.
 2. Deliver the FINAL authoritative verdict with comprehensive, fact-specific reasoning.
-3. Write a clear ratio_decidendi (binding legal principle based on these specific facts).
+3. For employment cases: explicitly state whether the POSH Act 2013 and/or Industrial Disputes Act 1947 applies, and direct the complainant to the appropriate forum (Internal Committee / Labour Court / Civil Court).
+4. Correctly apply Section 73 — do not refuse to apply it just because no monetary amount is pre-specified.
+5. Write a clear legal principle based on these specific facts.
 
 Respond ONLY with valid JSON:
 {{
   "verdict": {verdict_opts},
   "confidence_score": 0.0,
-  "reasoning_chain": "Fact-specific synthesis of all 3 council arguments. Quote exact monetary amounts from the facts. 3-5 sentences.",
+  "reasoning_chain": "Fact-specific synthesis. Correctly cite Industrial Disputes Act 1947 and POSH Act 2013 for employment cases. 3-5 sentences.",
   "cited_precedents": ["case1"],
-  "ratio_decidendi": "The binding legal principle: ...",
-  "obiter_dicta": "Non-binding observations for future cases."
+  "ratio_decidendi": "Key legal principle (Note: This is an AI preliminary analysis, not a binding judicial precedent): ...",
+  "obiter_dicta": "Recommended next steps: Whether to approach Internal Committee (POSH), Labour Court (IDA 1947), or Civil Court. Any additional observations."
 }}"""
     for attempt in range(3):
         try:
-            resp = OpenAI(api_key=HF_TOKEN or GROQ_API_KEY, base_url=HF_BASE_URL if HF_TOKEN else "https://api.groq.com/openai/v1").chat.completions.create(
+            resp = OpenAI(api_key=council_api_key, base_url=council_base_url).chat.completions.create(
                 model=CHIEF_JUSTICE_MODEL,
                 messages=[{"role": "user", "content": synthesis_prompt}],
                 temperature=0.2, max_tokens=1000
