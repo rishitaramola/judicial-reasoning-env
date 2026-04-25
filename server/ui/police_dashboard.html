@@ -265,7 +265,7 @@ function renderEvidenceCard(sub, idx, container) {
             } else {
                 const icon = file.type === 'pdf' ? '📄' : file.type === 'video' ? '🎥' : '📁';
                 const demoIcon = file.demoPlaceholder || icon;
-                galleryHtml += `<div class="ev-item ${itemStatus}">
+                galleryHtml += `<div class="ev-item ${itemStatus}" onclick="openFile('${file.dataUrl || ''}', '${file.name}')">
                     <div class="ev-placeholder" style="background: linear-gradient(135deg,#1e293b,#0f172a);">${demoIcon}</div>
                     <div class="ev-label">${icon} ${file.name}</div>
                     <div class="ev-verify-check">${itemStatus === 'item-ok' ? '✓' : itemStatus === 'item-no' ? '✕' : ''}</div>
@@ -358,6 +358,12 @@ async function verifyEvidence(idx, caseId, approved) {
         return;
     }
 
+    // ── Confirmation popup (Issue 4) ──
+    const confirmMsg = approved
+        ? `✅ CONFIRM APPROVAL\n\nYou are about to APPROVE the evidence for case ${caseId}.\n\nAre you sure?`
+        : `❌ CONFIRM REJECTION\n\nYou are about to REJECT the evidence for case ${caseId}.\n\nAre you sure?`;
+    if (!confirm(confirmMsg)) return;
+
     const status = approved ? 'verified' : 'rejected';
 
     // Update localStorage
@@ -372,31 +378,51 @@ async function verifyEvidence(idx, caseId, approved) {
     const sub = submissions.find(s => s.caseId === caseId);
     if (sub) { sub.status = status; localStorage.setItem('evidence_submissions', JSON.stringify(submissions)); }
 
-    // Update UI
-    const pill = document.getElementById(`pill-${idx}`);
-    const card = document.getElementById(`card-${idx}`);
-    if (pill) { pill.textContent = approved ? '✅ VERIFIED' : '❌ REJECTED'; pill.className = `status-pill ${status}`; }
-    if (card) { card.className = `evidence-card ${status}`; }
-
     // Notify main window if open
     localStorage.setItem('police_verification_update', JSON.stringify({ caseId, approved, comment, timestamp: new Date().toISOString() }));
 
     if (approved) {
-        alert(`✅ Evidence VERIFIED and approved.\n\nOfficer: POL-4921\nCase: ${caseId}\nComments: ${comment.substring(0, 100)}...\n\nThe citizen's case will now proceed to AI Fact-Bundling.`);
+        alert(`✅ Evidence APPROVED\n\nOfficer: POL-4921\nCase: ${caseId}\nComments: ${comment.substring(0, 100)}...\n\nThe citizen's case will now proceed to AI Fact-Bundling.`);
         pendingCount = Math.max(0, pendingCount - 1);
         verifiedCount++;
     } else {
-        alert(`❌ Evidence REJECTED.\n\nCase: ${caseId}\nOfficer Comments: ${comment.substring(0, 100)}...\n\nThe citizen will be notified that their evidence was not verified.`);
+        alert(`❌ Evidence REJECTED\n\nCase: ${caseId}\nOfficer Comments: ${comment.substring(0, 100)}...\n\nThe citizen will be asked if they have additional evidence to submit.`);
         pendingCount = Math.max(0, pendingCount - 1);
         rejectedCount++;
     }
     updateStats();
+    // Reload the cards to reflect new status (Issue 5 — fixes refresh showing wrong status)
+    loadEvidenceQueue();
 }
 
 function updateStats() {
     document.getElementById('stat-pending').textContent = pendingCount;
     document.getElementById('stat-verified').textContent = verifiedCount;
     document.getElementById('stat-rejected').textContent = rejectedCount;
+}
+
+function openFile(dataUrl, fileName) {
+    if (dataUrl && dataUrl !== 'null' && dataUrl.startsWith('data:image')) {
+        openLightbox(dataUrl);
+    } else if (dataUrl && dataUrl !== 'null' && dataUrl.startsWith('data:application/pdf')) {
+        // Open PDF in a new tab
+        const win = window.open();
+        if (win) {
+            win.document.write(`<iframe src="${dataUrl}" style="width:100%;height:100%;border:none;"></iframe>`);
+            win.document.title = fileName;
+        } else {
+            alert('Popup blocked. Please allow popups to view PDFs.');
+        }
+    } else if (dataUrl && dataUrl !== 'null') {
+        // Generic file — try to open
+        const win = window.open();
+        if (win) {
+            win.document.write(`<iframe src="${dataUrl}" style="width:100%;height:100%;border:none;"></iframe>`);
+            win.document.title = fileName;
+        }
+    } else {
+        alert(`📄 "${fileName}" — File preview not available.\nThis file was uploaded but the browser cannot display it inline.`);
+    }
 }
 
 function openLightbox(src) {

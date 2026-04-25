@@ -91,7 +91,7 @@ document.getElementById('btn-demo').addEventListener('click', async () => {
     document.getElementById('aadhar-input').value = '1234-5678-9012';
     document.getElementById('phone-input').value = '+91 9876543210';
     document.getElementById('relation-input').value = 'victim';
-    document.getElementById('offender-input').value = 'DL 4C 1234 (Driver Name Unknown)';
+    document.getElementById('offender-name').value = 'DL 4C 1234 (Driver Name Unknown)';
     const summaryEl = document.getElementById('case-summary-input');
     if (summaryEl) summaryEl.value = 'A 17-year-old minor was driving his parent\'s car and jumped a red light, causing a collision with my vehicle. I suffered injuries and my car sustained Rs. 85,000 in damage. The accident occurred on 15 April 2026 at Ring Road, Delhi. A dashcam video has been uploaded as evidence.';
 
@@ -296,11 +296,27 @@ document.getElementById('btn-submit-evidence').addEventListener('click', () => {
                     <div style="text-align:center; padding: 1rem; background: rgba(248,113,113,0.1); border-radius: 8px;">
                         <div style="font-size:2rem;">❌</div>
                         <div style="margin-top:0.5rem; color: #f87171; font-weight:600;">Evidence Rejected</div>
-                        <div style="font-size:0.85rem; margin-top:0.25rem; color:#cbd5e1;">The Police Module rejected your evidence. You cannot proceed.</div>
+                        <div style="font-size:0.85rem; margin-top:0.25rem; color:#cbd5e1;">The Police Module rejected your evidence.</div>
                     </div>
                 `;
-                document.getElementById('btn-skip-evidence').style.display = 'block';
-                document.getElementById('btn-skip-evidence').textContent = 'Proceed without Evidence';
+                // Ask victim if they have additional evidence (Issue 4)
+                setTimeout(() => {
+                    const hasMore = confirm('❌ Your evidence was rejected by the police officer.\n\nDo you have any other evidence to submit?\n\nClick OK to upload new evidence, or Cancel to proceed without evidence.');
+                    if (hasMore) {
+                        // Reset upload state and let them try again
+                        uploadedFiles = [];
+                        document.getElementById('btn-submit-evidence').style.display = 'block';
+                        document.getElementById('btn-skip-evidence').style.display = 'block';
+                        document.getElementById('btn-skip-evidence').textContent = 'Skip (No Evidence)';
+                        statusDiv.style.display = 'none';
+                        const fileList = document.getElementById('upload-file-list');
+                        if (fileList) fileList.innerHTML = '';
+                        document.getElementById('evidence-file').value = '';
+                    } else {
+                        document.getElementById('btn-skip-evidence').style.display = 'block';
+                        document.getElementById('btn-skip-evidence').textContent = 'Proceed without Evidence';
+                    }
+                }, 500);
             }
         }
     }, 1000);
@@ -318,7 +334,7 @@ function pushToPoliceQueue() {
         subCategory: currentDomain,
         submittedAt: now.toLocaleString('en-IN'),
         status: 'pending',
-        files: uploadedFiles.map(f => ({ name: f.name, type: f.type, dataUrl: f.type === 'image' ? f.dataUrl : null, demoPlaceholder: f.type === 'pdf' ? '📄' : f.type === 'video' ? '🎥' : '📁' }))
+        files: uploadedFiles.map(f => ({ name: f.name, type: f.type, dataUrl: f.dataUrl, demoPlaceholder: f.type === 'pdf' ? '📄' : f.type === 'video' ? '🎥' : '📁' }))
     });
     localStorage.setItem('evidence_submissions', JSON.stringify(existing));
     return caseId;
