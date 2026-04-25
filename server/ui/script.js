@@ -645,6 +645,39 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
         verdictEl.className = 'verdict-pill ' + (data.action.verdict === 'liable' ? 'verdict-liable' : data.action.verdict === 'not_liable' ? 'verdict-notliable' : data.action.verdict === 'forward_to_judge' ? 'verdict-fwd' : '');
         document.getElementById('v-reasoning').textContent = data.action.reasoning_chain;
 
+        // ─── Render Council Deliberation Cards ───────────────
+        if (data.council_deliberation && data.council_deliberation.length > 0) {
+            document.getElementById('v-council-block').style.display = 'block';
+            const cardsEl = document.getElementById('v-council-cards');
+            cardsEl.innerHTML = '';
+            const verdictColor = { liable:'#f87171', not_liable:'#4ade80', forward_to_judge:'#fb923c', partial_liability:'#facc15' };
+            const voteClass = { liable:'vote-liable', not_liable:'vote-not-liable', forward_to_judge:'vote-forward', partial_liability:'vote-partial' };
+            data.council_deliberation.forEach(agent => {
+                const v = agent.verdict || 'liable';
+                const card = document.createElement('div');
+                card.className = `council-agent-card ${voteClass[v] || ''}`;
+                const conf = agent.confidence ? Math.round(agent.confidence * 100) : '?';
+                const statutes = (agent.key_statutes || []).slice(0, 2).join(', ') || 'N/A';
+                card.innerHTML = `
+                    <div class="cac-name">${agent.name || 'Agent'}</div>
+                    <div class="cac-model">${agent.model || ''}</div>
+                    <span class="cac-verdict" style="background:${verdictColor[v]}22; color:${verdictColor[v]}; border:1px solid ${verdictColor[v]}55;">${v.toUpperCase().replace(/_/g,' ')}</span>
+                    <div class="cac-argument">${agent.argument || 'No argument provided.'}</div>
+                    <div class="cac-confidence">Confidence: ${conf}% · Statutes: ${statutes}</div>
+                `;
+                cardsEl.appendChild(card);
+            });
+            // Extract Chief Justice synthesis from the reasoning chain
+            const cjMarker = '[═══ CHIEF JUSTICE SYNTHESIS (DeepSeek-R1) ═══]';
+            const cjIdx = data.action.reasoning_chain.indexOf(cjMarker);
+            if (cjIdx !== -1) {
+                document.getElementById('v-cj-text').textContent = data.action.reasoning_chain.substring(cjIdx + cjMarker.length).trim();
+                document.getElementById('v-chief-justice').style.display = 'block';
+                // Show clean synthesis in v-reasoning instead of the full transcript
+                document.getElementById('v-reasoning').textContent = data.action.reasoning_chain.substring(cjIdx + cjMarker.length).trim();
+            }
+        }
+
         if (data.action.ratio_decidendi) {
             document.getElementById('v-ratio').textContent = data.action.ratio_decidendi;
             document.getElementById('v-ratio-block').style.display = 'block';

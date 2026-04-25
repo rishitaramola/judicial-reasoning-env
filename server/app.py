@@ -12,8 +12,10 @@ The server:
 """
 
 import asyncio
+import concurrent.futures
 import json
 import os
+import re
 import sys
 import threading
 import time
@@ -39,21 +41,59 @@ load_dotenv()
 
 # ─── Configuration ────────────────────────────────────────────
 
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.groq.com/openai/v1")
-MODEL_NAME   = os.environ.get("MODEL_NAME", "llama-3.3-70b-versatile")
-API_KEY      = os.environ.get("GROQ_API_KEY", "")
+HF_TOKEN     = os.environ.get("HF_TOKEN", "")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+HF_BASE_URL  = "https://api-inference.huggingface.co/v1/"
 
-# Fallback to Hugging Face if Groq is blocked or missing, using DeepSeek!
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
+# Primary API config (used for /chat endpoint)
 if HF_TOKEN:
-    API_BASE_URL = "https://api-inference.huggingface.co/v1/"
-    MODEL_NAME = "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
-    API_KEY = HF_TOKEN
-    print(f"OK: Hugging Face DeepSeek Model active via HF_TOKEN")
-elif not API_KEY:
-    print("WARNING: No API keys set. AI Judge will use offline demo mode.")
+    API_KEY      = HF_TOKEN
+    API_BASE_URL = HF_BASE_URL
+    print("OK: Hugging Face Multi-Agent Council active via HF_TOKEN")
+elif GROQ_API_KEY:
+    API_KEY      = GROQ_API_KEY
+    API_BASE_URL = "https://api.groq.com/openai/v1"
+    print(f"OK: GROQ fallback active ({GROQ_API_KEY[:8]}...)")
 else:
-    print(f"OK: GROQ_API_KEY loaded ({API_KEY[:8]}...)")
+    API_KEY = ""
+    API_BASE_URL = ""
+    print("WARNING: No API keys. AI Judge will use offline demo mode.")
+
+CHAT_MODEL = "meta-llama/Llama-3.3-70B-Instruct" if HF_TOKEN else "llama-3.3-70b-versatile"
+
+# ─── True Multi-Model Council ─────────────────────────────────
+# Three completely independent AI models deliberate in parallel
+COUNCIL_AGENTS = [
+    {
+        "name": "Agent 1 — The Precedent Analyst",
+        "model": "meta-llama/Llama-3.3-70B-Instruct",
+        "persona": (
+            "You are the Precedent Analyst on the AI Judicial Council. "
+            "You reason EXCLUSIVELY through established Indian case law — how the Supreme Court and High Courts "
+            "decided similar cases. Cite specific rulings to justify your position."
+        )
+    },
+    {
+        "name": "Agent 2 — The Constitutional Scholar",
+        "model": "Qwen/Qwen2.5-72B-Instruct",
+        "persona": (
+            "You are the Constitutional Scholar on the AI Judicial Council. "
+            "You reason through Constitutional law, Fundamental Rights (Part III), Directive Principles (Part IV), "
+            "and the Bharatiya Nyaya Sanhita (BNS) 2023. You are the guardian of constitutional compliance."
+        )
+    },
+    {
+        "name": "Agent 3 — The Legal Realist",
+        "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+        "persona": (
+            "You are the Legal Realist on the AI Judicial Council. "
+            "You analyze cases through real-world impact, socioeconomic context, and the spirit of justice. "
+            "You balance legal technicality with equitable outcomes for all parties."
+        )
+    }
+]
+# Chief Justice synthesizes all 3 arguments
+CHIEF_JUSTICE_MODEL = "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
 
 MAX_TOTAL_REWARD       = 1.0
 SUCCESS_SCORE_THRESHOLD = 0.5
@@ -191,12 +231,12 @@ def ai_judge(request: ResetRequest):
             evaluation=StepResponse(observation=obs_next.model_dump(), reward=reward, done=done, truncated=truncated, info=info)
         )
 
-    client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
-    action = get_agent_action(obs, client)
+    action, council_votes = get_agent_action(obs)
     obs_next, reward, done, truncated, info = env.step(action)
     return AIJudgeResponse(
         action=action.model_dump(),
-        evaluation=StepResponse(observation=obs_next.model_dump(), reward=reward, done=done, truncated=truncated, info=info)
+        evaluation=StepResponse(observation=obs_next.model_dump(), reward=reward, done=done, truncated=truncated, info=info),
+        council_deliberation=council_votes
     )
 
 
@@ -302,10 +342,10 @@ Rules:
 
     try:
         response = client.chat.completions.create(
-            model=MODEL_NAME,
+            model=CHAT_MODEL,
             messages=messages,
             temperature=0.3,
-            max_tokens=200,
+            max_tokens=250,
         )
         reply = response.choices[0].message.content.strip()
         return ChatResponse(response=reply)
@@ -383,172 +423,196 @@ def log_end(success: bool, steps: int, score: float, rewards: list):
     print(f"[END] success={success} steps={steps} score={score:.4f} rewards={rewards}", flush=True)
 
 
-def get_agent_action(obs, client: OpenAI) -> JudicialAction:
-    is_criminal = obs.domain == "petty_crime"
-    
-    # Define the 3 Personas for the Council of AIs
-    personas = [
-        "The Strict Constitutionalist: You adhere strictly to the letter of the law, constitutional provisions, and precedents.",
-        "The Empathetic Mediator: You focus on restorative justice, equitable outcomes, and the context of the parties involved.",
-        "The Precedent Analyst: You heavily weigh past case outcomes and aim for extreme consistency with previous rulings."
-    ]
-    
-    base_prompt = f"""You are JusticeEngine-01, an AI legal mediator for Indian courts.
-FACT PATTERN:
+def _call_council_member(agent: dict, obs, is_criminal: bool) -> dict:
+    """Call one council member model and return their structured legal argument."""
+    client = OpenAI(api_key=HF_TOKEN or GROQ_API_KEY, base_url=HF_BASE_URL if HF_TOKEN else "https://api.groq.com/openai/v1")
+    verdict_opts = '"forward_to_judge"' if is_criminal else '"liable", "not_liable", or "partial_liability"'
+    task_note = (
+        "TASK: This is a CRIMINAL case. Do NOT pass final judgment. Identify the BNS section, assess evidence, "
+        "and recommend forward_to_judge with your reasoning."
+        if is_criminal else
+        "TASK: This is a CIVIL case. Analyze through your specialized legal perspective and state your verdict."
+    )
+    prompt = f"""{agent['persona']}
+
+CASE FACTS:
 {obs.fact_pattern}
 
 APPLICABLE STATUTES:
 {chr(10).join(obs.statutes)}
 
 PRECEDENTS:
-{json.dumps(obs.precedents, indent=2)}
+{json.dumps(obs.precedents[:3], indent=2)}
 
-EVIDENCE FLAGS:
-{', '.join(obs.evidence_flags) if obs.evidence_flags else 'None'}
-"""
-    
-    if is_criminal:
-        task_prompt = """
-CRITICAL INSTRUCTION: This is a CRIMINAL case. You MUST NOT pass a final judgment or verdict.
-Your task is to:
-1. Bundle all the facts and evidence logically for a human judge.
-2. Identify if this is a punishable offense strictly under the new Bharatiya Nyaya Sanhita (BNS) or BNSS.
-3. State the potential punishment range (minimum and maximum).
-4. Set the verdict field EXACTLY to "forward_to_judge".
-5. State whether the offence is cognizable and bailable or non-bailable.
+EVIDENCE: {', '.join(obs.evidence_flags) if obs.evidence_flags else 'None'}
 
-COURT HIERARCHY RULE: Always cite Supreme Court of India rulings first, then High Court.
+{task_note}
 
-Respond ONLY with a valid JSON object:
-{
-  "verdict": "forward_to_judge",
-  "confidence_score": 0.0 to 1.0,
-  "reasoning_chain": "Your bundled facts, BNS offense identification, and potential punishment.",
-  "cited_precedents": ["case_id_1", "case_id_2"],
-  "ratio_decidendi": "The binding legal principle: this act is [punishable/not] under BNS Section [X].",
-  "obiter_dicta": "Non-binding observations about the case."
-}"""
-    else:
-        task_prompt = """
-CRITICAL INSTRUCTION: This is a CIVIL case. You must analyze the facts and provide a final verdict.
-Base your reasoning strictly on the Constitution of India, the precedents provided, and follow court hierarchy:
-Supreme Court of India > High Court > Sessions Court > Magistrate Court.
+Respond ONLY with valid JSON (no markdown, no preamble):
+{{
+  "verdict": {verdict_opts},
+  "argument": "Your 2-3 sentence legal argument from your specialized perspective.",
+  "key_statutes": ["statute1", "statute2"],
+  "confidence": 0.0
+}}"""
+    for attempt in range(3):
+        try:
+            resp = client.chat.completions.create(
+                model=agent["model"],
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3, max_tokens=500
+            )
+            raw = resp.choices[0].message.content.strip()
+            raw = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
+            raw = raw.replace("```json", "").replace("```", "").strip()
+            m = re.search(r'\{.*\}', raw, re.DOTALL)
+            data = json.loads(m.group(0) if m else raw)
+            return {"name": agent["name"], "model": agent["model"], **data}
+        except Exception:
+            time.sleep(2 ** attempt)
+    return {
+        "name": agent["name"], "model": agent["model"],
+        "verdict": "forward_to_judge" if is_criminal else "liable",
+        "argument": f"[{agent['name']} did not respond — fallback position adopted.]",
+        "key_statutes": [], "confidence": 0.4
+    }
 
-IMPORTANT: If the same fact pattern was decided differently at High Court and Supreme Court, ALWAYS follow the Supreme Court verdict.
 
-You MUST provide:
-- ratio_decidendi: The single binding legal principle forming the foundation of your decision.
-- obiter_dicta: Non-binding observations made in passing.
-- If no prior precedent: label as FRESH CASE.
+def _synthesize_verdict(council_votes: list, obs, is_criminal: bool) -> dict:
+    """Chief Justice DeepSeek reads all 3 arguments and delivers the final verdict."""
+    client = OpenAI(api_key=HF_TOKEN or GROQ_API_KEY, base_url=HF_BASE_URL if HF_TOKEN else "https://api.groq.com/openai/v1")
+    deliberation = ""
+    for v in council_votes:
+        deliberation += f"\n─── {v['name']} ({v['model']}) ───\n"
+        deliberation += f"  Verdict: {v.get('verdict','?').upper()}\n"
+        deliberation += f"  Confidence: {v.get('confidence', 0.5):.0%}\n"
+        deliberation += f"  Argument: {v.get('argument', 'N/A')}\n"
+        if v.get('key_statutes'):
+            deliberation += f"  Key Statutes: {', '.join(v['key_statutes'])}\n"
+    verdict_opts = '"forward_to_judge"' if is_criminal else '"liable", "not_liable", or "partial_liability"'
+    extra = "Set verdict to forward_to_judge." if is_criminal else "Choose the verdict backed by the strongest legal arguments."
+    synthesis_prompt = f"""You are the Chief Justice of the AI Judicial Council for Indian courts. Three expert agents have deliberated on this case:
 
-Respond ONLY with a valid JSON object:
-{
-  "verdict": "liable OR not_liable OR partial_liability",
-  "confidence_score": 0.0 to 1.0,
-  "reasoning_chain": "Step by step reasoning referencing Constitution, BNS, and court hierarchy.",
-  "cited_precedents": ["case_id_1", "case_id_2"],
-  "ratio_decidendi": "The ratio of this case is: [single binding principle].",
-  "obiter_dicta": "This court notes, obiter, that [non-binding observation]."
-}"""
+CASE: {obs.fact_pattern[:400]}
 
-    votes = []
-    
-    # Get 3 votes from the 3 personas
-    for persona in personas:
-        full_prompt = f"{persona}\n\n{base_prompt}\n\n{task_prompt}"
-        for attempt in range(2):
+COUNCIL DELIBERATION:{deliberation}
+
+Your task as Chief Justice:
+1. Weigh the arguments from all three agents.
+2. Identify which arguments are most legally sound under Indian law.
+3. Deliver the FINAL authoritative verdict with comprehensive reasoning.
+4. Write a clear ratio_decidendi (binding legal principle).
+{extra}
+
+Respond ONLY with valid JSON:
+{{
+  "verdict": {verdict_opts},
+  "confidence_score": 0.0,
+  "reasoning_chain": "Synthesize all 3 council arguments here. Quote the strongest points. 3-5 sentences.",
+  "cited_precedents": ["case1"],
+  "ratio_decidendi": "The binding legal principle: ...",
+  "obiter_dicta": "Non-binding observations for future cases."
+}}"""
+    for attempt in range(3):
+        try:
+            resp = OpenAI(api_key=HF_TOKEN or GROQ_API_KEY, base_url=HF_BASE_URL if HF_TOKEN else "https://api.groq.com/openai/v1").chat.completions.create(
+                model=CHIEF_JUSTICE_MODEL,
+                messages=[{"role": "user", "content": synthesis_prompt}],
+                temperature=0.2, max_tokens=1000
+            )
+            raw = resp.choices[0].message.content.strip()
+            raw = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
+            raw = raw.replace("```json", "").replace("```", "").strip()
+            m = re.search(r'\{.*\}', raw, re.DOTALL)
+            return json.loads(m.group(0) if m else raw)
+        except Exception:
+            time.sleep(2 ** attempt)
+    # Fallback: majority vote
+    counts = {}
+    for v in council_votes:
+        counts[v.get('verdict', 'liable')] = counts.get(v.get('verdict', 'liable'), 0) + 1
+    maj = max(counts, key=counts.get)
+    return {
+        "verdict": maj, "confidence_score": 0.65,
+        "reasoning_chain": f"Chief Justice synthesis unavailable. Majority council position ({maj}) adopted.",
+        "cited_precedents": [], "ratio_decidendi": "Majority council verdict adopted per constitutional design.",
+        "obiter_dicta": "Full synthesis will be available when the Chief Justice model is online."
+    }
+
+
+def get_agent_action(obs, _unused=None) -> tuple:
+    """True multi-model judicial council: 3 agents in parallel, then Chief Justice synthesizes."""
+    is_criminal = obs.domain == "petty_crime"
+
+    # Phase 1: All 3 council members deliberate IN PARALLEL
+    council_votes = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {executor.submit(_call_council_member, agent, obs, is_criminal): agent for agent in COUNCIL_AGENTS}
+        for future in concurrent.futures.as_completed(futures):
             try:
-                response = client.chat.completions.create(
-                    model=MODEL_NAME,
-                    messages=[{"role": "user", "content": full_prompt}],
-                    temperature=0.3,
-                )
-                raw = response.choices[0].message.content.strip()
-                raw = raw.replace("```json", "").replace("```", "").strip()
-                data = json.loads(raw)
-                votes.append(data)
-                break
-            except Exception as e:
-                time.sleep(1)
-                
-    if not votes:
-        raise ValueError("All 3 agents failed to generate a valid response.")
+                council_votes.append(future.result(timeout=45))
+            except Exception as ex:
+                a = futures[future]
+                council_votes.append({
+                    "name": a["name"], "model": a["model"],
+                    "verdict": "forward_to_judge" if is_criminal else "liable",
+                    "argument": f"[Agent timed out: {str(ex)[:60]}]",
+                    "key_statutes": [], "confidence": 0.3
+                })
 
-    # Majority Voting Logic
-    verdict_counts = {}
-    for v in votes:
-        verdict_counts[v["verdict"]] = verdict_counts.get(v["verdict"], 0) + 1
+    # Phase 2: Chief Justice DeepSeek synthesizes into final verdict
+    synthesis = _synthesize_verdict(council_votes, obs, is_criminal)
 
-    majority_verdict = max(verdict_counts, key=verdict_counts.get)
-    max_votes = verdict_counts[majority_verdict]
+    # Build full council transcript
+    transcript = "[═══ JUDICIAL COUNCIL DELIBERATION ═══]\n\n"
+    for vote in council_votes:
+        transcript += f"◉ {vote['name']}\n"
+        transcript += f"  Model: {vote['model']}\n"
+        transcript += f"  Position: {vote.get('verdict','?').upper()} (Confidence: {vote.get('confidence',0.5):.0%})\n"
+        transcript += f"  Argument: {vote.get('argument','N/A')}\n\n"
+    transcript += "[═══ CHIEF JUSTICE SYNTHESIS (DeepSeek-R1) ═══]\n\n"
+    transcript += synthesis.get("reasoning_chain", "")
 
-    # 3-WAY SPLIT: if all three disagree (each unique verdict), auto-escalate to human judge
-    if len(verdict_counts) == len(votes) and max_votes == 1:
-        final_reasoning = "[COUNCIL OF AI: 3-WAY SPLIT — No consensus reached. This case is automatically being escalated to a Human Judge as per constitutional design.]\n\nVotes:\n"
-        for i, v in enumerate(votes):
-            final_reasoning += f"  Agent {i+1} ({personas[i].split(':')[0]}): {v.get('verdict')} — {v.get('reasoning_chain', '')[:100]}...\n"
-        return JudicialAction(
-            verdict="forward_to_judge",
-            confidence_score=0.0,
-            reasoning_chain=final_reasoning,
-            cited_precedents=[],
-            ratio_decidendi="3-way split among AI Council — no binding ratio established.",
-            obiter_dicta="Human judicial review is required.",
-            refer_to_human_judge=True,
-            case_status="forwarded_to_judge"
-        )
-
-    # Find the best reasoning chain (the one that matches the majority verdict)
-    winning_vote = next((v for v in votes if v["verdict"] == majority_verdict), votes[0])
-
-    # Modify reasoning to show it was a majority vote
-    final_reasoning = f"[COUNCIL OF AI MAJORITY VOTE: {max_votes}/3 AGREED]\n\n" + winning_vote.get("reasoning_chain", "")
-
-    return JudicialAction(
-        verdict=majority_verdict,
-        confidence_score=float(winning_vote.get("confidence_score", 0.8)),
-        reasoning_chain=final_reasoning,
-        cited_precedents=winning_vote.get("cited_precedents", []),
-        ratio_decidendi=winning_vote.get("ratio_decidendi", ""),
-        obiter_dicta=winning_vote.get("obiter_dicta", ""),
-        case_status="resolved_by_ai" if majority_verdict != "forward_to_judge" else "forwarded_to_judge"
+    action = JudicialAction(
+        verdict=synthesis["verdict"],
+        confidence_score=float(synthesis.get("confidence_score", 0.8)),
+        reasoning_chain=transcript,
+        cited_precedents=synthesis.get("cited_precedents", []),
+        ratio_decidendi=synthesis.get("ratio_decidendi", ""),
+        obiter_dicta=synthesis.get("obiter_dicta", ""),
+        case_status="resolved_by_ai" if synthesis["verdict"] != "forward_to_judge" else "forwarded_to_judge"
     )
+    return action, council_votes
 
 
-async def run_task(task_config: dict, client: OpenAI) -> float:
+
+async def run_task(task_config: dict) -> float:
     task_name = task_config["name"]
     log_start(task_name)
-
     env = JudicialEnv(domain=task_config["domain"], difficulty=task_config["difficulty"])
     obs, _ = env.reset()
-
-    rewards = []
-    steps_taken = 0
-    success = False
-    score = 0.0
-
+    rewards, steps_taken, success, score = [], 0, False, 0.0
     try:
         for step_num in range(1, 4):
             try:
-                action = get_agent_action(obs, client)
+                action, _ = get_agent_action(obs)
                 obs, reward, done, truncated, info = env.step(action)
                 rewards.append(reward)
                 steps_taken = step_num
-                log_step(step=step_num, action=action.verdict, reward=reward, done=done, error=None)
+                log_step(step=step_num, action=action.verdict, reward=reward, done=done)
                 if done:
                     obs, _ = env.reset()
             except Exception as e:
                 log_step(step=step_num, action="ERROR", reward=0.0, done=False, error=str(e))
                 break
-
         score = sum(rewards) / (len(rewards) * MAX_TOTAL_REWARD) if rewards else 0.001
         score = min(max(score, 0.001), 0.999)
         success = score >= SUCCESS_SCORE_THRESHOLD
-
     finally:
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
-
     return score
+
+
 
 
 async def run_all_tasks():
@@ -560,11 +624,9 @@ async def run_all_tasks():
         RESULTS.update({"status": "skipped", "scores": {}, "overall": 0.0})
         return
 
-    client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
     all_scores = {}
-
     for task in TASKS:
-        score = await run_task(task, client)
+        score = await run_task(task)
         all_scores[task["name"]] = round(score, 4)
 
     overall = sum(all_scores.values()) / len(all_scores)

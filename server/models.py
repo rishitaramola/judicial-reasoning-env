@@ -43,6 +43,7 @@ class HealthResponse(BaseModel):
 class AIJudgeResponse(BaseModel):
     action: Dict[str, Any]
     evaluation: StepResponse
+    council_deliberation: Optional[List[Dict[str, Any]]] = None  # Each agent's vote
 
 class EscalateRequest(BaseModel):
     case_id: str

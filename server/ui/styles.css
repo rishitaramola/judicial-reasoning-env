@@ -401,3 +401,41 @@ body {
 .verdict-notliable { background:rgba(74,222,128,0.15); color:#4ade80; border:1px solid rgba(74,222,128,0.3); }
 .verdict-fwd { background:rgba(251,146,60,0.15); color:#fb923c; border:1px solid rgba(251,146,60,0.3); }
 .verdict-partial { background:rgba(250,204,21,0.15); color:#facc15; border:1px solid rgba(250,204,21,0.3); }
+
+/* === MULTI-AGENT COUNCIL === */
+.agent-status-row {
+    display: flex; align-items: center; gap: 0.65rem;
+    color: var(--muted); text-align: left;
+}
+.agent-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--gold); flex-shrink: 0;
+}
+@keyframes pulseDot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.7); }
+}
+.pulse-dot { animation: pulseDot 1.2s ease-in-out infinite; }
+
+/* Council agent cards in verdict panel */
+.council-agent-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 0.85rem;
+    transition: border-color 0.3s;
+}
+.council-agent-card.vote-liable { border-color: rgba(239,68,68,0.35); }
+.council-agent-card.vote-not-liable { border-color: rgba(74,222,128,0.35); }
+.council-agent-card.vote-forward { border-color: rgba(251,146,60,0.35); }
+.council-agent-card.vote-partial { border-color: rgba(250,204,21,0.35); }
+.cac-name { font-size: 0.7rem; font-weight: 700; color: var(--gold); letter-spacing: 0.06em; margin-bottom: 0.3rem; }
+.cac-model { font-size: 0.65rem; color: var(--muted); margin-bottom: 0.5rem; }
+.cac-verdict { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 12px; font-size: 0.7rem; font-weight: 700; margin-bottom: 0.5rem; }
+.cac-argument { font-size: 0.75rem; color: #cbd5e1; line-height: 1.5; }
+.cac-confidence { font-size: 0.65rem; color: var(--muted); margin-top: 0.4rem; }
+
+@media (max-width: 700px) {
+    #v-council-cards { grid-template-columns: 1fr !important; }
+}
+

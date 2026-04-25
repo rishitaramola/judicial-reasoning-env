@@ -375,8 +375,14 @@
                 <!-- State B: AI Processing -->
                 <div id="ai-thinking" style="display:none;" class="ai-thinking-panel">
                     <div class="thinking-orb">⚖️</div>
-                    <h3>Consulting the Constitution &amp; BNS...</h3>
-                    <p>JusticeEngine-01 is reviewing your dossier</p>
+                    <h3>Judicial Council is Deliberating...</h3>
+                    <p style="color:var(--muted); margin-bottom:1.2rem;">3 independent AI models are analyzing your case in parallel</p>
+                    <div style="display:flex; flex-direction:column; gap:0.5rem; max-width:340px; margin:0 auto;">
+                        <div class="agent-status-row"><span class="agent-dot pulse-dot"></span><span style="font-size:0.82rem;">Agent 1 — Llama-3.3-70B (Precedent Analyst)</span></div>
+                        <div class="agent-status-row"><span class="agent-dot pulse-dot" style="animation-delay:0.3s"></span><span style="font-size:0.82rem;">Agent 2 — Qwen-2.5-72B (Constitutional Scholar)</span></div>
+                        <div class="agent-status-row"><span class="agent-dot pulse-dot" style="animation-delay:0.6s"></span><span style="font-size:0.82rem;">Agent 3 — Mixtral-8x7B (Legal Realist)</span></div>
+                        <div class="agent-status-row" style="margin-top:0.5rem; border-top:1px solid var(--border); padding-top:0.5rem;"><span class="agent-dot pulse-dot" style="background:#a5b4fc; animation-delay:0.9s"></span><span style="font-size:0.82rem; color:#a5b4fc;">Chief Justice — DeepSeek-R1-32B (Synthesis)</span></div>
+                    </div>
                 </div>
 
                 <!-- State C: AI Verdict -->
@@ -394,6 +400,16 @@
                         <div class="verdict-row">
                             <span class="vr-label">Recommended Finding</span>
                             <span id="v-verdict" class="verdict-pill"></span>
+                        </div>
+                    </div>
+
+                    <!-- Council Deliberation Cards -->
+                    <div id="v-council-block" style="display:none; margin-bottom:1.5rem;">
+                        <h4 style="color:var(--gold); margin-bottom:1rem; font-size:0.95rem; letter-spacing:0.05em;">🏛️ JUDICIAL COUNCIL DELIBERATION</h4>
+                        <div id="v-council-cards" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem; margin-bottom:1rem;"></div>
+                        <div id="v-chief-justice" style="background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08)); border:1px solid rgba(99,102,241,0.4); border-radius:10px; padding:1rem; display:none;">
+                            <div style="font-size:0.7rem; color:#a5b4fc; font-weight:700; letter-spacing:0.1em; margin-bottom:0.4rem;">⚖️ CHIEF JUSTICE — DeepSeek-R1 SYNTHESIS</div>
+                            <p id="v-cj-text" style="font-size:0.85rem; color:#e2e8f0; line-height:1.5; margin:0;"></p>
                         </div>
                     </div>
 
