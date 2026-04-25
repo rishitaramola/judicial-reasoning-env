@@ -164,10 +164,7 @@ function buildSubcats(cats) {
         btn.addEventListener('click', () => {
             currentDomain = cat.domain;
             currentDifficulty = cat.difficulty;
-            if (cat.urgent) {
-                const ok = confirm(`⚠️ IMPORTANT: "${cat.label}" cases are serious. The AI will gather your facts and prepare a preliminary record, but a Human Judge WILL review this case. Do you want to proceed?`);
-                if (!ok) return;
-            }
+            window.caseTrack = (cat.domain === 'petty_crime' || cat.urgent) ? 'CRIMINAL' : 'CIVIL';
             show('screen-kyc'); // Go to KYC instead of dossier directly
         });
         grid.appendChild(btn);
@@ -584,9 +581,18 @@ async function sendUserMessage(text) {
     }
 
     // Also unlock after 8 exchanges as a fallback
+    // Also unlock after 8 exchanges as a fallback
     if (chatHistory.length >= 8) {
-        document.getElementById('generate-btn').disabled = false;
-        document.getElementById('generate-hint').textContent = '✅ Dossier ready — you may now generate the judgment';
+        if (window.caseTrack === 'CRIMINAL') {
+            document.getElementById('forward-btn').style.display = 'block';
+            document.getElementById('forward-btn').disabled = false;
+            document.getElementById('generate-btn').style.display = 'none';
+        } else {
+            document.getElementById('generate-btn').style.display = 'block';
+            document.getElementById('generate-btn').disabled = false;
+            document.getElementById('forward-btn').style.display = 'none';
+        }
+        document.getElementById('generate-hint').textContent = '✅ Dossier ready — you may now proceed';
     }
 }
 
@@ -601,8 +607,16 @@ function postAI(text) {
     if (text.includes('DOSSIER_COMPLETE:')) {
         const clean = text.replace('DOSSIER_COMPLETE:', '').trim();
         div.innerHTML = `<strong>JusticeEngine-01</strong>${clean}`;
-        document.getElementById('generate-btn').disabled = false;
-        document.getElementById('generate-hint').textContent = '✅ Dossier ready — you may now generate the judgment';
+        if (window.caseTrack === 'CRIMINAL') {
+            document.getElementById('forward-btn').style.display = 'block';
+            document.getElementById('forward-btn').disabled = false;
+            document.getElementById('generate-btn').style.display = 'none';
+        } else {
+            document.getElementById('generate-btn').style.display = 'block';
+            document.getElementById('generate-btn').disabled = false;
+            document.getElementById('forward-btn').style.display = 'none';
+        }
+        document.getElementById('generate-hint').textContent = '✅ Dossier ready — you may now proceed';
     }
 }
 
@@ -619,7 +633,15 @@ document.getElementById('chat-input').addEventListener('keypress', e => { if(e.k
 
 // ─── Evidence Locker in Dossier removed as per user feedback ─────
 
-// ─── Generate Judgment ────────────────────────────────
+// ─── Generate Judgment / Forward ────────────────────────────────
+
+document.getElementById('forward-btn').addEventListener('click', async () => {
+    document.getElementById('chat-panel').style.display = 'none';
+    document.getElementById('ai-thinking').style.display = 'block';
+    // Use the same endpoint but it will detect criminal track based on domain
+    document.getElementById('generate-btn').click(); 
+});
+
 document.getElementById('generate-btn').addEventListener('click', async () => {
     document.getElementById('chat-panel').style.display = 'none';
     document.getElementById('ai-thinking').style.display = 'block';

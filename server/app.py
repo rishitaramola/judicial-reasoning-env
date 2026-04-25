@@ -24,7 +24,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, RedirectResponse, FileResponse
 from dotenv import load_dotenv
-from openai import OpenAI
+import anthropic
 
 # Ensure project root is on path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -41,25 +41,35 @@ load_dotenv()
 
 # ─── Configuration ────────────────────────────────────────────
 
-HF_TOKEN     = os.environ.get("HF_TOKEN", "")
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-HF_BASE_URL  = "https://api-inference.huggingface.co/v1/"
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 
-# Primary API config — GROQ preferred (faster, more reliable), HF as fallback
-if GROQ_API_KEY:
-    API_KEY      = GROQ_API_KEY
-    API_BASE_URL = "https://api.groq.com/openai/v1"
-    print(f"OK: GROQ multi-agent council active ({GROQ_API_KEY[:8]}...)")
-elif HF_TOKEN:
-    API_KEY      = HF_TOKEN
-    API_BASE_URL = HF_BASE_URL
-    print("OK: Hugging Face fallback active via HF_TOKEN")
+if ANTHROPIC_API_KEY:
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    print(f"OK: Anthropic multi-agent council active")
 else:
-    API_KEY = ""
-    API_BASE_URL = ""
-    print("WARNING: No API keys. AI Judge will use offline demo mode.")
+    client = None
+    print("WARNING: No Anthropic API key. AI Judge will use offline demo mode.")
 
-CHAT_MODEL = "meta-llama/Llama-3.3-70B-Instruct" if HF_TOKEN else "llama-3.3-70b-versatile"
+CRIMINAL_DOMAINS = [
+    "murder", "culpable_homicide", "assault", "hurt", 
+    "domestic_violence", "kidnapping", "abduction",
+    "robbery", "dacoity", "cyber_crime", "drug_narcotics",
+    "fraud_cheating", "petty_crime"
+]
+
+CIVIL_DOMAINS = [
+    "contract_dispute", "property", "rent", "tort_civil",
+    "family_civil", "labour", "consumer", "contract"
+]
+
+def get_case_track(case_type: str) -> str:
+    if case_type.lower() in CRIMINAL_DOMAINS:
+        return "CRIMINAL"
+    elif case_type.lower() in CIVIL_DOMAINS:
+        return "CIVIL"
+    else:
+        return "CRIMINAL"  # Default to criminal if unsure (safer)
+
 
 # ─── Legal Database Config ────────────────────────────────────
 # Indian Kanoon API (free — register at https://api.indiankanoon.org/)
@@ -70,11 +80,11 @@ IKANOON_SEARCH   = "https://indiankanoon.org/search/?formInput="
 PRS_SEARCH       = "https://prsindia.org/billtrack?q="
 
 # ─── True Multi-Model Council ─────────────────────────────────
-# Three completely independent AI models deliberate in parallel
+# Three completely independent AI models deliberate sequentially
 COUNCIL_AGENTS = [
     {
         "name": "Agent 1 — The Precedent Analyst",
-        "model": "llama-3.3-70b-versatile",           # Best Llama on GROQ
+        "model": "claude-sonnet-4-20250514",
         "persona": (
             "You are the Precedent Analyst on the AI Judicial Council. "
             "You reason through established Indian case law and statutory frameworks. "
@@ -88,7 +98,7 @@ COUNCIL_AGENTS = [
     },
     {
         "name": "Agent 2 — The Constitutional Scholar",
-        "model": "mixtral-8x7b-32768",              # Mixtral on GROQ
+        "model": "claude-sonnet-4-20250514",
         "persona": (
             "You are the Constitutional Scholar on the AI Judicial Council. "
             "You reason through Constitutional law, Fundamental Rights, and statutory compliance. "
@@ -101,7 +111,7 @@ COUNCIL_AGENTS = [
     },
     {
         "name": "Agent 3 — The Legal Realist",
-        "model": "llama-3.1-70b-versatile",          # Second Llama variant on GROQ
+        "model": "claude-sonnet-4-20250514",
         "persona": (
             "You are the Legal Realist on the AI Judicial Council. "
             "You analyze cases through real-world impact and practical justice. "
@@ -113,8 +123,8 @@ COUNCIL_AGENTS = [
         )
     }
 ]
-# Chief Justice synthesizes all 3 arguments — use best available GROQ model
-CHIEF_JUSTICE_MODEL = "llama-3.3-70b-versatile"
+# Chief Justice synthesizes all 3 arguments
+CHIEF_JUSTICE_MODEL = "claude-sonnet-4-20250514"
 
 MAX_TOTAL_REWARD       = 1.0
 SUCCESS_SCORE_THRESHOLD = 0.5
@@ -506,10 +516,14 @@ def _fetch_indian_kanoon_precedents(query: str, max_results: int = 3) -> str:
 
 def _call_council_member(agent: dict, obs, is_criminal: bool, live_precedents: str = "") -> dict:
     """Call one council member model and return their structured legal argument."""
-    # Always use GROQ when available — HF Inference API has connectivity issues
-    council_api_key = GROQ_API_KEY or HF_TOKEN
-    council_base_url = "https://api.groq.com/openai/v1" if GROQ_API_KEY else HF_BASE_URL
-    client = OpenAI(api_key=council_api_key, base_url=council_base_url)
+    if not client:
+        return {
+            "name": agent["name"], "model": agent["model"],
+            "verdict": "forward_to_judge" if is_criminal else "liable",
+            "argument": f"[{agent['name']} offline — offline demo.]",
+            "key_statutes": [], "confidence": 0.4
+        }
+    
     verdict_opts = '"forward_to_judge"' if is_criminal else '"liable", "not_liable", or "partial_liability"'
     cpc_note = (
         "CPC REFERENCE: In complex questions of law the court may refer to a higher court (CPC Sec 113). "
@@ -549,12 +563,12 @@ Respond ONLY with valid JSON (no markdown, no preamble):
 }}"""
     for attempt in range(3):
         try:
-            resp = client.chat.completions.create(
+            resp = client.messages.create(
                 model=agent["model"],
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3, max_tokens=500
+                max_tokens=1000,
+                messages=[{"role": "user", "content": prompt}]
             )
-            raw = resp.choices[0].message.content.strip()
+            raw = resp.content[0].text.strip()
             raw = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
             raw = raw.replace("```json", "").replace("```", "").strip()
             m = re.search(r'\{.*\}', raw, re.DOTALL)
@@ -571,11 +585,17 @@ Respond ONLY with valid JSON (no markdown, no preamble):
 
 
 def _synthesize_verdict(council_votes: list, obs, is_criminal: bool) -> dict:
-    """Chief Justice DeepSeek reads all 3 arguments and delivers the final verdict."""
-    # Always use GROQ when available — HF Inference API has connectivity issues
-    council_api_key = GROQ_API_KEY or HF_TOKEN
-    council_base_url = "https://api.groq.com/openai/v1" if GROQ_API_KEY else HF_BASE_URL
-    client = OpenAI(api_key=council_api_key, base_url=council_base_url)
+    """Chief Justice synthesizes all 3 arguments and delivers the final verdict."""
+    if not client:
+        return {
+            "verdict": "forward_to_judge" if is_criminal else "liable",
+            "confidence_score": 0.8,
+            "reasoning_chain": "Offline demo.",
+            "cited_precedents": [],
+            "ratio_decidendi": "Offline.",
+            "obiter_dicta": ""
+        }
+        
     deliberation = ""
     for v in council_votes:
         deliberation += f"\n─── {v['name']} ({v['model']}) ───\n"
@@ -623,12 +643,12 @@ Respond ONLY with valid JSON:
 }}"""
     for attempt in range(3):
         try:
-            resp = OpenAI(api_key=council_api_key, base_url=council_base_url).chat.completions.create(
+            resp = client.messages.create(
                 model=CHIEF_JUSTICE_MODEL,
-                messages=[{"role": "user", "content": synthesis_prompt}],
-                temperature=0.2, max_tokens=1000
+                max_tokens=2000,
+                messages=[{"role": "user", "content": synthesis_prompt}]
             )
-            raw = resp.choices[0].message.content.strip()
+            raw = resp.content[0].text.strip()
             raw = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
             raw = raw.replace("```json", "").replace("```", "").strip()
             m = re.search(r'\{.*\}', raw, re.DOTALL)
@@ -649,8 +669,8 @@ Respond ONLY with valid JSON:
 
 
 def get_agent_action(obs, _unused=None) -> tuple:
-    """True multi-model judicial council: 3 agents in parallel, then Chief Justice synthesizes."""
-    is_criminal = obs.domain == "petty_crime"
+    """True multi-model judicial council: 3 agents sequentially, then Chief Justice synthesizes."""
+    is_criminal = get_case_track(obs.domain) == "CRIMINAL"
 
     # Fetch live Indian Kanoon precedents once (shared across all agents)
     ik_query = f"{obs.fact_pattern[:120]} India"
@@ -658,21 +678,20 @@ def get_agent_action(obs, _unused=None) -> tuple:
     if live_precedents:
         print(f"[IK] Live precedents fetched: {len(live_precedents)} chars")
 
-    # Phase 1: All 3 council members deliberate IN PARALLEL
+    # Phase 1: All 3 council members deliberate SEQUENTIALLY
     council_votes = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        futures = {executor.submit(_call_council_member, agent, obs, is_criminal, live_precedents): agent for agent in COUNCIL_AGENTS}
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                council_votes.append(future.result(timeout=45))
-            except Exception as ex:
-                a = futures[future]
-                council_votes.append({
-                    "name": a["name"], "model": a["model"],
-                    "verdict": "forward_to_judge" if is_criminal else "liable",
-                    "argument": f"[Agent timed out: {str(ex)[:60]}]",
-                    "key_statutes": [], "confidence": 0.3
-                })
+    for agent in COUNCIL_AGENTS:
+        try:
+            result = _call_council_member(agent, obs, is_criminal, live_precedents)
+            council_votes.append(result)
+            time.sleep(0.5) # small buffer
+        except Exception as ex:
+            council_votes.append({
+                "name": agent["name"], "model": agent["model"],
+                "verdict": "forward_to_judge" if is_criminal else "liable",
+                "argument": f"[Agent timed out: {str(ex)[:60]}]",
+                "key_statutes": [], "confidence": 0.3
+            })
 
     # Phase 2: Chief Justice DeepSeek synthesizes into final verdict
     synthesis = _synthesize_verdict(council_votes, obs, is_criminal)
