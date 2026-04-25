@@ -47,12 +47,12 @@ import torch
 import sys
 sys.path.insert(0, "/content/judicial-reasoning-env")
 
-from unsloth import FastLanguageModel, PatchFastRL
+from unsloth import FastLanguageModel
 from trl import GRPOConfig, GRPOTrainer
 from datasets import Dataset
 from environment import JudicialEnv, JudicialAction
 
-PatchFastRL("GRPO", FastLanguageModel)
+# PatchFastRL intentionally removed — causes OSError on Colab (not needed)
 
 print(f"✅ GPU: {torch.cuda.get_device_name(0)}")
 print(f"✅ VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
