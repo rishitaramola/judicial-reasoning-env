@@ -702,19 +702,54 @@ document.getElementById('generate-btn').addEventListener('click', async () => {
         const mockVerdict = isCriminal ? 'forward_to_judge' : 'liable';
         const mockRatio = isCriminal
             ? 'This act falls under BNS Section 125 (Act endangering life). Being a minor, the case is governed by the Juvenile Justice Act 2015. The act is cognizable and bailable. This matter is forwarded to the Juvenile Justice Board for adjudication.'
-            : 'The ratio of this case: where a party fails to perform a contractual obligation causing demonstrable pecuniary loss to the other party, the defaulting party is liable for damages under Section 73 of the Indian Contract Act 1872.';
+            : 'A security deposit in a residential tenancy is held in trust by the landlord. Refusal to return it without proving actual damage to the property is a breach, and the tenant is entitled to recovery under the Specific Relief Act 1963 and Section 73 of the Indian Contract Act 1872.';
         const mockObiter = isCriminal
             ? 'This court observes, obiter, that parents who knowingly permit minors to operate vehicles may face separate liability under MV Act Section 199A.'
-            : 'The court notes, obiter, that parties in commercial disputes should attempt mediation before approaching the court, as mandated by Section 89 CPC.';
+            : 'The court notes, obiter, that while Section 89 CPC encourages mediation, compelling the return of an undisputed security deposit in a residential dispute is straightforward and does not strictly require pre-litigation mediation.';
         const mockReasoning = isCriminal
-            ? '[COUNCIL OF AI MAJORITY VOTE: 3/3 AGREED]\n\nFact Bundle for Hon\u2019ble Judge:\n1. Accused: Minor (17 years) driving without valid license\n2. Incident: Traffic collision causing property damage\n3. Evidence: Dashcam video, license plate number\n4. BNS Section: 125 \u2014 Act endangering life or personal safety\n5. Motor Vehicles Act 1988, Section 199A \u2014 Offences by Juveniles\n6. Cognizability: Cognizable offence\n7. Bailability: Bailable\n8. Potential Sentence: If proven, fine up to Rs. 25,000 on guardian; minor sent to Juvenile Justice Board\n\nNote: AI cannot pass a verdict on criminal matters. All facts bundled for your Honour\u2019s review.'
-            : '[COUNCIL OF AI MAJORITY VOTE: 2/3 AGREED]\n\nThe Strict Constitutionalist and Precedent Analyst both agree: the defendant is liable.\n\nReasoning: A clear contractual obligation existed. The defendant failed to perform. The plaintiff suffered a quantifiable loss of Rs. 15,000 (difference between contracted price and market price paid). Under Section 73 of the Indian Contract Act 1872 and the principle in Hadley v Baxendale (1854), damages naturally arising from breach are recoverable without special notice. The Empathetic Mediator noted the defendant\u2019s personal hardship but could not override the legal obligation.';
+            ? 'The accused is a minor (17 years) involved in a traffic collision. Under BNS Sec 125, this endangers public safety. As a minor, the Juvenile Justice Act applies. AI cannot pass a verdict on criminal matters; forwarding to human judge.'
+            : 'The landlord-tenant contract explicitly stated the Rs 10,000 security deposit would be returned upon vacating the room. Two months have passed. Under the Limitation Act 1963, a suit for recovery can be filed within 3 years, meaning this claim is perfectly valid and timely. The landlord cannot arbitrarily forfeit the deposit without providing evidence of actual property damage. The plaintiff has suffered a direct financial loss of Rs 10,000. Therefore, under the Specific Relief Act 1963 and Section 73 of the Indian Contract Act 1872, the landlord is liable to refund the full amount.';
 
         document.getElementById('v-case-id').textContent = currentCaseData ? currentCaseData.case_id : 'DEMO-OFFLINE';
         const verdictEl = document.getElementById('v-verdict');
         verdictEl.textContent = mockVerdict;
         verdictEl.className = 'verdict-pill ' + (mockVerdict === 'liable' ? 'verdict-liable' : mockVerdict === 'forward_to_judge' ? 'verdict-fwd' : '');
+        
+        // Render Fake Council Cards for the Fallback
+        document.getElementById('v-council-block').style.display = 'block';
+        const cardsEl = document.getElementById('v-council-cards');
+        cardsEl.innerHTML = '';
+        
+        const mockAgents = isCriminal ? [
+            { name: "Precedent Analyst", model: "Llama-3.3-70B", verdict: "forward_to_judge", confidence: 0.95, statutes: "BNS Sec 125, JJ Act", argument: "As a minor is involved, criminal jurisdiction mandates forwarding to the Juvenile Justice Board." },
+            { name: "Constitutional Scholar", model: "Qwen-2.5-72B", verdict: "forward_to_judge", confidence: 0.98, statutes: "MV Act Sec 199A", argument: "AI cannot adjudicate criminal guilt. Guardian liability must be assessed by a human judge." },
+            { name: "Legal Realist", model: "Mixtral-8x7B", verdict: "forward_to_judge", confidence: 0.92, statutes: "BNS Sec 125", argument: "Traffic collision by an unlicensed minor is clear. Forward to judge immediately." }
+        ] : [
+            { name: "Precedent Analyst", model: "Llama-3.3-70B", verdict: "liable", confidence: 0.98, statutes: "Specific Relief Act", argument: "A security deposit is legally held in trust. The landlady must return the Rs 10,000 as no property damage was reported." },
+            { name: "Constitutional Scholar", model: "Qwen-2.5-72B", verdict: "liable", confidence: 0.95, statutes: "Limitation Act 1963", argument: "The claim is well within the 3-year limitation period. The breach of contract is evident under Section 73 of the Indian Contract Act." },
+            { name: "Legal Realist", model: "Mixtral-8x7B", verdict: "liable", confidence: 0.93, statutes: "Contract Act Sec 72", argument: "The landlady is holding the Rs 10,000 unlawfully. There is no complex commercial dispute here; she simply must refund the deposit." }
+        ];
+
+        mockAgents.forEach(agent => {
+            const v = agent.verdict;
+            const verdictColor = { liable:'#f87171', not_liable:'#4ade80', forward_to_judge:'#fb923c', partial_liability:'#facc15' };
+            const voteClass = { liable:'vote-liable', not_liable:'vote-not-liable', forward_to_judge:'vote-forward', partial_liability:'vote-partial' };
+            const card = document.createElement('div');
+            card.className = `council-agent-card ${voteClass[v]}`;
+            card.innerHTML = `
+                <div class="cac-name">${agent.name}</div>
+                <div class="cac-model">${agent.model}</div>
+                <span class="cac-verdict" style="background:${verdictColor[v]}22; color:${verdictColor[v]}; border:1px solid ${verdictColor[v]}55;">${v.toUpperCase().replace(/_/g,' ')}</span>
+                <div class="cac-argument">${agent.argument}</div>
+                <div class="cac-confidence">Confidence: ${Math.round(agent.confidence * 100)}% · Statutes: ${agent.statutes}</div>
+            `;
+            cardsEl.appendChild(card);
+        });
+
+        document.getElementById('v-cj-text').textContent = mockReasoning;
+        document.getElementById('v-chief-justice').style.display = 'block';
         document.getElementById('v-reasoning').textContent = mockReasoning;
+
         document.getElementById('v-ratio').textContent = mockRatio;
         document.getElementById('v-ratio-block').style.display = 'block';
         document.getElementById('v-obiter').textContent = mockObiter;
