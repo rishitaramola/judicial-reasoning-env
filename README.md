@@ -37,7 +37,7 @@ We use OpenEnv's Rubric system to provide a composable reward signal during GRPO
 *Note: A random/baseline Llama 3.1 8B agent typically scores ~0.45 due to hallucinated Western precedents and structural failures. Post-training target is ~0.80.*
 
 ## Dataset
-- **Size:** 48 curated cases (scaling to 10K+ for production).
+- **Size:** 75 curated cases (scaling to 10K+ for production).
 - **Domains:** Civil (Contract/Tort/Property), Criminal (BNS/BNSS advisory), Family Law, Labor, and Constitutional.
 - **Sources:** Derived from IndianKanoon API, NJDG, and Ministry of Home Affairs reference texts.
 - **Precedents:** Western benchmarks (Hadley v Baxendale) have been explicitly replaced with binding Indian equivalents (Satyabrata Ghose v Mugneeram Bangur, M.C. Mehta v Union of India, Vishaka v State of Rajasthan).
@@ -63,9 +63,12 @@ python server/app.py
 ```
 
 ## Training
-The core training loop uses **GRPO** (Group Relative Policy Optimization) via the HuggingFace `TRL` library and `Unsloth` for 4-bit quantization. 
+The core training loop uses **GRPO** (Group Relative Policy Optimization) via the HuggingFace `TRL` library and `Unsloth` for 4-bit quantization.
 - **Model:** `unsloth/Meta-Llama-3.1-8B-Instruct`
-- **Execution:** Runs efficiently on a free Colab T4 GPU.
+- **Curriculum:** 3-phase training (Easy → Easy+Medium → All difficulties, 250 total steps)
+- **Tasks:** 4 tasks — Contract (Easy), Tort (Medium), Property (Hard), Petty Crime/BNS 2023 (Hard)
+- **Reward Functions:** `format_reward`, `accuracy_reward`, `logic_reward`, `process_reward`
+- **Execution:** Runs efficiently on a free Colab T4 GPU (~30-45 min).
 - **Colab Notebook:** [Link to Training Notebook](https://colab.research.google.com/github/rishitaramola/judicial-reasoning-env/blob/main/training/training_colab.ipynb)
 
 ![Reward Curve](https://raw.githubusercontent.com/rishitaramola/judicial-reasoning-env/main/training_curve.png)
