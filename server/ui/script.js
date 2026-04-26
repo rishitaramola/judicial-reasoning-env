@@ -263,27 +263,38 @@ document.getElementById('btn-submit-evidence').addEventListener('click', () => {
     // Push to police queue in background — do NOT block the user
     const caseId = pushToPoliceQueue();
 
-    // Show brief confirmation then proceed immediately
     const statusDiv = document.getElementById('upload-status');
     statusDiv.style.display = 'block';
+    
+    // Show pending status
     statusDiv.innerHTML = `
-        <div style="text-align:center; padding:0.75rem; background:rgba(74,222,128,0.1); border-radius:8px;">
-            <div style="font-size:1.5rem;">📤</div>
-            <div style="margin-top:0.5rem; color:#4ade80; font-weight:600;">Evidence Submitted!</div>
-            <div style="font-size:0.8rem; margin-top:0.25rem; color:#94a3b8;">Case ID: ${caseId} — Police will verify in background.<br>Proceeding to your case dossier...</div>
+        <div style="text-align:center; padding:0.75rem; background:rgba(250,204,21,0.1); border-radius:8px; border:1px solid rgba(250,204,21,0.3);">
+            <div style="font-size:1.5rem; animation: pulse 1.5s infinite;">⏳</div>
+            <div style="margin-top:0.5rem; color:#facc15; font-weight:600;">Pending Police Verification</div>
+            <div style="font-size:0.8rem; margin-top:0.25rem; color:#94a3b8;">Case ID: ${caseId}</div>
+            <div style="font-size:0.75rem; margin-top:0.5rem; color:#cbd5e1;">Please ask the Police Officer to verify your evidence in the <a href="/police_dashboard.html" target="_blank" style="color:#60a5fa;">Police Module</a> to proceed.</div>
         </div>
     `;
+    
     document.getElementById('btn-submit-evidence').style.display = 'none';
     document.getElementById('btn-skip-evidence').style.display = 'none';
 
-    // Go to dossier after brief delay
-    setTimeout(() => loadDossier(), 1800);
-
-    // Background poll: if police reject later, show a notification in dossier
+    // Background poll: wait for police verification
     const pollTimer = setInterval(() => {
         const existing = JSON.parse(localStorage.getItem('evidence_submissions') || '[]');
         const myCase = existing.find(c => c.caseId === caseId);
-        if (myCase && myCase.status === 'rejected') {
+        
+        if (myCase && myCase.status === 'verified') {
+            clearInterval(pollTimer);
+            statusDiv.innerHTML = `
+                <div style="text-align:center; padding:0.75rem; background:rgba(74,222,128,0.1); border-radius:8px;">
+                    <div style="font-size:1.5rem;">✅</div>
+                    <div style="margin-top:0.5rem; color:#4ade80; font-weight:600;">Evidence Verified by Police!</div>
+                    <div style="font-size:0.8rem; margin-top:0.25rem; color:#94a3b8;">Proceeding to your case dossier...</div>
+                </div>
+            `;
+            setTimeout(() => loadDossier(caseId), 1500);
+        } else if (myCase && myCase.status === 'rejected') {
             clearInterval(pollTimer);
             const hasMore = confirm('❌ Your evidence was rejected by the police officer.\n\nDo you have any other evidence to submit?\n\nClick OK to upload new evidence, or Cancel to continue without.');
             if (hasMore) {
@@ -296,10 +307,11 @@ document.getElementById('btn-submit-evidence').addEventListener('click', () => {
                 const fileList = document.getElementById('upload-file-list');
                 if (fileList) fileList.innerHTML = '';
                 document.getElementById('evidence-file').value = '';
+            } else {
+                loadDossier(caseId);
             }
         }
-        if (myCase && myCase.status === 'verified') clearInterval(pollTimer);
-    }, 3000);
+    }, 1000);
 });
 
 function pushToPoliceQueue() {
@@ -325,7 +337,7 @@ document.getElementById('btn-skip-evidence').addEventListener('click', () => {
 });
 
 // ─── Load Case & Go to Dossier ────────────────────────
-async function loadDossier() {
+async function loadDossier(forcedCaseId) {
     show('screen-dossier');
     document.getElementById('dossier-badge').textContent = currentType === 'civil' ? 'Civil Case' : currentType === 'criminal' ? 'Criminal Case' : 'Quasi-Judicial';
     window.__caseType = currentType;
@@ -359,12 +371,13 @@ async function loadDossier() {
         if (!res.ok) throw new Error('API error');
         const data = await res.json();
         currentCaseData = data.observation;
+        if (forcedCaseId) currentCaseData.case_id = forcedCaseId;
         renderDossierLeft(currentCaseData);
     } catch(e) {
         // Fallback: use the user's own description as the case summary
         const userSummary = kycData.caseSummary || 'Your case has been registered. Please answer the questions below so I can build your legal dossier.';
         currentCaseData = {
-            case_id: `USR-${Date.now().toString().slice(-6)}`,
+            case_id: forcedCaseId || `USR-${Date.now().toString().slice(-6)}`,
             fact_pattern: userSummary,
             evidence_flags: uploadedFiles.map(f => f.name),
             statutes: currentType === 'criminal'
