@@ -98,7 +98,7 @@ While several excellent datasets and models exist in the legal AI space, this pr
 - **Our Contribution:** Unlike static classifiers, JudicialMediationEnv applies RL with a structured multi-component reward function to adversarial multi-turn judicial decision-making strictly within the Indian context.
 
 ## Limitations
-- **Dataset Size:** The current hackathon dataset is limited to ~48 cases.
+- **Dataset Size:** The current hackathon dataset is limited to ~75 cases.
 - **Criminal Scope:** For ethical and legal safety, the AI acts strictly in an **Advisory** capacity for criminal cases (identifying BNS sections and summarizing facts for a human judge) rather than passing full guilty/not guilty verdicts.
 - **Mock Interfaces:** The Aadhaar verification and Police Dashboards in the UI are functional mockups for the hackathon demonstration.
 
