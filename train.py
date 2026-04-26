@@ -86,8 +86,8 @@ MAX_SEQ_LENGTH    = 4096
 LORA_RANK         = 16
 LORA_ALPHA        = 16                                     # alpha = rank is standard
 MAX_STEPS         = 250                                    # Total across 3 phases
-HF_REPO_ID        = "Sarthaksingh26/justice-engine-01-lora"
-DATASET_REPO_ID   = "Sarthaksingh26/indian-legal-cases"
+HF_REPO_ID        = "RishitaRamola42/justice-engine-01-lora"
+DATASET_REPO_ID   = "RishitaRamola42/indian-legal-cases"
 WANDB_PROJECT     = "justice-engine-01"
 WANDB_RUN_NAME    = "grpo-bns-curriculum-v3"
 
