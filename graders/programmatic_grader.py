@@ -9,6 +9,7 @@ No grader returns a constant score (disqualification criterion).
 
 import json
 import os
+import re
 import sys
 from typing import List, Optional
 
@@ -27,7 +28,7 @@ def _clamp(score: float) -> float:
 
 class ProgrammaticGrader:
     """
-    Deterministic grader for all three judicial reasoning tasks.
+    Deterministic grader for all four judicial reasoning tasks.
 
     Scores are computed from:
     - Verdict accuracy against gold label
@@ -128,35 +129,134 @@ class ProgrammaticGrader:
         self.results["task3_property"] = round(score, 4)
         return score
 
-    # ─── Run All Tasks ────────────────────────────────────────────
+    # --- Task 4: Petty Crime (Hard) ---
+
+    def grade_task4(self, actions: List[JudicialAction], domain: str = "petty_crime", difficulty: str = "hard") -> float:
+        """
+        Grade Task 4 - Petty crime under BNS 2023.
+
+        Metric: Must output forward_to_judge + quality of reasoning.
+        Returns mean score, strictly in (0.001, 0.999).
+        """
+        env = JudicialEnv(domain=domain, difficulty=difficulty)
+        scores = []
+
+        for action in actions:
+            obs, _ = env.reset()
+            _, reward, _, _, info = env.step(action)
+            # Criminal cases: bonus if verdict is forward_to_judge
+            if action.verdict == "forward_to_judge":
+                adjusted = reward * 0.7 + 0.3  # reward correctness
+            else:
+                adjusted = reward * 0.3  # penalty for wrong verdict type
+            scores.append(adjusted)
+
+        if not scores:
+            return 0.001
+
+        score = _clamp(sum(scores) / len(scores))
+        self.results["task4_petty_crime"] = round(score, 4)
+        return score
+
+    # --- Grade Raw LLM Output ---
+
+    def grade_raw_output(self, raw_text: str, domain: str = "contract", difficulty: str = "easy") -> dict:
+        """
+        Accept raw LLM text output, parse it, construct JudicialAction,
+        run through env, and return full reward breakdown.
+
+        Supports both JSON and XML formatted outputs.
+        """
+        action_dict = None
+
+        # Try JSON parse
+        try:
+            raw_clean = raw_text.replace("```json", "").replace("```", "").strip()
+            action_dict = json.loads(raw_clean)
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+        # Try XML parse
+        if not action_dict:
+            try:
+                verdict = re.search(r'<verdict>(.*?)</verdict>', raw_text, re.DOTALL)
+                confidence = re.search(r'<confidence_score>(.*?)</confidence_score>', raw_text, re.DOTALL)
+                reasoning = re.search(r'<reasoning_chain>(.*?)</reasoning_chain>', raw_text, re.DOTALL)
+                if verdict:
+                    action_dict = {
+                        "verdict": verdict.group(1).strip(),
+                        "confidence_score": float(confidence.group(1).strip()) if confidence else 0.5,
+                        "reasoning_chain": reasoning.group(1).strip() if reasoning else "",
+                        "cited_precedents": [],
+                    }
+            except Exception:
+                pass
+
+        if not action_dict:
+            return {"error": "Failed to parse LLM output", "composite": 0.001}
+
+        try:
+            action = JudicialAction(
+                verdict=action_dict.get("verdict", "forward_to_judge"),
+                confidence_score=float(action_dict.get("confidence_score", 0.5)),
+                reasoning_chain=action_dict.get("reasoning_chain", ""),
+                cited_precedents=action_dict.get("cited_precedents", []),
+                ratio_decidendi=action_dict.get("ratio_decidendi", ""),
+                obiter_dicta=action_dict.get("obiter_dicta", ""),
+            )
+            env = JudicialEnv(domain=domain, difficulty=difficulty)
+            obs, _ = env.reset()
+            _, reward, _, _, info = env.step(action)
+            return {
+                "composite": reward,
+                "logic_score": info.get("logic_score", 0.0),
+                "accuracy_score": info.get("accuracy_score", 0.0),
+                "fairness_score": info.get("fairness_score", 0.0),
+                "citation_score": info.get("citation_score", 0.0),
+                "gold_label": info.get("gold_label", ""),
+                "verdict": action.verdict,
+            }
+        except Exception as e:
+            return {"error": str(e), "composite": 0.001}
+
+    # --- Run All Tasks ---
 
     def grade_all(
         self,
         task1_actions: Optional[List[JudicialAction]] = None,
         task2_actions: Optional[List[JudicialAction]] = None,
         task3_actions: Optional[List[JudicialAction]] = None,
+        task4_actions: Optional[List[JudicialAction]] = None,
     ) -> dict:
         """
-        Run all three task graders and return a results dict.
+        Run all four task graders and return a results dict.
         All scores strictly in (0.001, 0.999).
         """
-        dummy_action = JudicialAction(
+        dummy_civil = JudicialAction(
             verdict="liable",
             confidence_score=0.5,
             reasoning_chain="Based on the evidence and applicable statutes, I find the defendant liable for the alleged breach.",
             cited_precedents=[]
         )
+        dummy_criminal = JudicialAction(
+            verdict="forward_to_judge",
+            confidence_score=0.8,
+            reasoning_chain="Under BNS Section 125, this criminal matter must be forwarded to a human judge for trial.",
+            cited_precedents=[]
+        )
 
-        t1 = self.grade_task1(task1_actions or [dummy_action])
-        t2 = self.grade_task2(task2_actions or [dummy_action])
-        t3 = self.grade_task3(task3_actions or [dummy_action])
+        t1 = self.grade_task1(task1_actions or [dummy_civil])
+        t2 = self.grade_task2(task2_actions or [dummy_civil])
+        t3 = self.grade_task3(task3_actions or [dummy_civil])
+        t4 = self.grade_task4(task4_actions or [dummy_criminal])
 
-        overall = _clamp((t1 + t2 + t3) / 3.0)
+        overall = _clamp((t1 + t2 + t3 + t4) / 4.0)
 
         return {
             "task1_contract": round(t1, 4),
             "task2_tort": round(t2, 4),
             "task3_property": round(t3, 4),
+            "task4_petty_crime": round(t4, 4),
             "overall": round(overall, 4)
         }
 

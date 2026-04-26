@@ -134,7 +134,7 @@
         "case_id": "P004",
         "case_name": "Jacob Mathew v State of Punjab (2005)",
         "verdict": "liable",
-        "rationale": "Res ipsa loquitur applies in medical negligence \u00e2\u20ac\u201d the thing speaks for itself."
+        "rationale": "Res ipsa loquitur applies in medical negligence â€” the thing speaks for itself."
       },
       {
         "case_id": "P005",
@@ -148,7 +148,7 @@
       "causation_disputed"
     ],
     "gold_label_verdict": "liable",
-    "gold_label_reasoning": "Res ipsa loquitur \u00e2\u20ac\u201d surgical sponge inside patient speaks for itself. Hospital is liable."
+    "gold_label_reasoning": "Res ipsa loquitur â€” surgical sponge inside patient speaks for itself. Hospital is liable."
   },
   {
     "case_id": "T002",
@@ -1105,5 +1105,887 @@
     "gold_verdict": "liable",
     "gold_reasoning": "Standard IRAC application of the specified statute.",
     "court_level": "high"
+  },
+  {
+    "case_id": "CRM-002",
+    "domain": "petty_crime",
+    "difficulty": "hard",
+    "fact_pattern": "A shopkeeper was caught on CCTV stealing electricity by tampering with the meter. The electricity board filed a complaint. The shopkeeper claims the meter was faulty.",
+    "applicable_statutes": [
+      "Bharatiya Nyaya Sanhita (BNS) 2023, Section 135 - Theft of electricity",
+      "Electricity Act 2003, Section 135 - Theft of electricity"
+    ],
+    "precedents": [
+      {
+        "case_id": "P-BNS-102",
+        "case_name": "State v Rajesh Kumar (2024)",
+        "verdict": "forward_to_judge",
+        "rationale": "Electricity theft is cognizable. Matter forwarded to magistrate."
+      }
+    ],
+    "evidence_flags": [
+      "cctv_evidence",
+      "meter_tampering_confirmed",
+      "electricity_board_complaint"
+    ],
+    "expert_verdict": "forward_to_judge",
+    "court_hierarchy_verdicts": {
+      "high_court": "forward_to_judge",
+      "supreme_court": "forward_to_judge"
+    },
+    "similar_cases": [
+      "CRM-001",
+      "CRM-003"
+    ],
+    "gold_label_verdict": "forward_to_judge",
+    "gold_label_reasoning": "Criminal matter under BNS 2023. AI cannot adjudicate. Case forwarded to human judge for trial."
+  },
+  {
+    "case_id": "CRM-003",
+    "domain": "petty_crime",
+    "difficulty": "hard",
+    "fact_pattern": "Two neighbors had an altercation over a parking space. Neighbor A slapped Neighbor B in front of witnesses. Neighbor B filed an FIR under BNS provisions for simple assault.",
+    "applicable_statutes": [
+      "Bharatiya Nyaya Sanhita (BNS) 2023, Section 115 - Voluntarily causing hurt",
+      "Bharatiya Nyaya Sanhita (BNS) 2023, Section 74 - Assault"
+    ],
+    "precedents": [
+      {
+        "case_id": "P-BNS-103",
+        "case_name": "Mohan v State (2025)",
+        "verdict": "forward_to_judge",
+        "rationale": "Simple assault is compoundable. Court may direct mediation first."
+      }
+    ],
+    "evidence_flags": [
+      "witnesses_available",
+      "fir_filed",
+      "no_serious_injury"
+    ],
+    "expert_verdict": "forward_to_judge",
+    "court_hierarchy_verdicts": {
+      "high_court": "forward_to_judge",
+      "supreme_court": "forward_to_judge"
+    },
+    "similar_cases": [
+      "CRM-001",
+      "CRM-004"
+    ],
+    "gold_label_verdict": "forward_to_judge",
+    "gold_label_reasoning": "Criminal matter under BNS 2023. AI cannot adjudicate. Case forwarded to human judge for trial."
+  },
+  {
+    "case_id": "CRM-004",
+    "domain": "petty_crime",
+    "difficulty": "hard",
+    "fact_pattern": "A street vendor was arrested for selling counterfeit branded goods worth Rs. 50,000. The vendor claims he did not know the goods were fake and bought them from a wholesale market.",
+    "applicable_statutes": [
+      "Bharatiya Nyaya Sanhita (BNS) 2023, Section 318 - Cheating",
+      "Trade Marks Act 1999, Section 103 - Penalty for selling goods with false trade marks"
+    ],
+    "precedents": [
+      {
+        "case_id": "P-BNS-104",
+        "case_name": "State v Counterfeit Seller (2024)",
+        "verdict": "forward_to_judge",
+        "rationale": "Selling counterfeit goods is punishable. Knowledge of counterfeiting is a question of fact for trial."
+      }
+    ],
+    "evidence_flags": [
+      "goods_seized",
+      "brand_verification_done",
+      "vendor_claims_ignorance"
+    ],
+    "expert_verdict": "forward_to_judge",
+    "court_hierarchy_verdicts": {
+      "high_court": "forward_to_judge",
+      "supreme_court": "forward_to_judge"
+    },
+    "similar_cases": [
+      "CRM-002"
+    ],
+    "gold_label_verdict": "forward_to_judge",
+    "gold_label_reasoning": "Criminal matter under BNS 2023. AI cannot adjudicate. Case forwarded to human judge for trial."
+  },
+  {
+    "case_id": "CRM-005",
+    "domain": "petty_crime",
+    "difficulty": "hard",
+    "fact_pattern": "A delivery driver was caught driving under the influence of alcohol after causing a minor fender-bender. No injuries occurred. The driver's blood alcohol level was 0.08%, just above the legal limit.",
+    "applicable_statutes": [
+      "Bharatiya Nyaya Sanhita (BNS) 2023, Section 125 - Act endangering life or personal safety",
+      "Motor Vehicles Act 1988, Section 185 - Driving by a drunken person"
+    ],
+    "precedents": [
+      {
+        "case_id": "P-BNS-105",
+        "case_name": "State v Drunk Driver (2025)",
+        "verdict": "forward_to_judge",
+        "rationale": "DUI is a criminal offense. License suspension and fine to be determined by magistrate."
+      }
+    ],
+    "evidence_flags": [
+      "breathalyzer_report",
+      "minor_accident",
+      "no_injuries"
+    ],
+    "expert_verdict": "forward_to_judge",
+    "court_hierarchy_verdicts": {
+      "high_court": "forward_to_judge",
+      "supreme_court": "forward_to_judge"
+    },
+    "similar_cases": [
+      "CRM-001"
+    ],
+    "gold_label_verdict": "forward_to_judge",
+    "gold_label_reasoning": "Criminal matter under BNS 2023. AI cannot adjudicate. Case forwarded to human judge for trial."
+  },
+  {
+    "case_id": "CRM-006",
+    "domain": "petty_crime",
+    "difficulty": "hard",
+    "fact_pattern": "A college student posted defamatory content about a professor on social media accusing them of taking bribes. The professor filed a complaint. The student claims it was a whistleblower post based on facts.",
+    "applicable_statutes": [
+      "Bharatiya Nyaya Sanhita (BNS) 2023, Section 356 - Defamation",
+      "Information Technology Act 2000, Section 66A - Offensive messages (struck down but often cited)"
+    ],
+    "precedents": [
+      {
+        "case_id": "P-BNS-106",
+        "case_name": "Shreya Singhal v Union of India (2015)",
+        "verdict": "forward_to_judge",
+        "rationale": "Free speech must be balanced against defamation rights. Truth is a defense under BNS Section 356."
+      }
+    ],
+    "evidence_flags": [
+      "social_media_screenshots",
+      "professor_complaint_filed",
+      "student_claims_evidence"
+    ],
+    "expert_verdict": "forward_to_judge",
+    "court_hierarchy_verdicts": {
+      "high_court": "forward_to_judge",
+      "supreme_court": "forward_to_judge"
+    },
+    "similar_cases": [
+      "CRM-003"
+    ],
+    "gold_label_verdict": "forward_to_judge",
+    "gold_label_reasoning": "Criminal matter under BNS 2023. AI cannot adjudicate. Case forwarded to human judge for trial."
+  },
+  {
+    "case_id": "T005",
+    "domain": "tort",
+    "difficulty": "medium",
+    "fact_pattern": "A construction company failed to put warning signs around an open trench on a public road. A cyclist fell into the trench at night and broke his leg. The company claims the cyclist was riding without lights.",
+    "applicable_statutes": [
+      "Law of Torts - Negligence and Duty of Care",
+      "Indian Penal Code Section 337 - Causing hurt by act endangering life"
+    ],
+    "precedents": [
+      {
+        "case_id": "P021",
+        "case_name": "Municipal Corporation of Delhi v Subhagwanti (1966)",
+        "verdict": "liable",
+        "rationale": "Entity creating hazard on public road must take adequate precautions. Failure to warn is negligence."
+      }
+    ],
+    "evidence_flags": [
+      "no_warning_signs",
+      "nighttime_accident",
+      "cyclist_no_lights"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Construction company had primary duty to warn. Cyclist's lack of lights is contributory but does not absolve the company.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "T002",
+      "T003"
+    ]
+  },
+  {
+    "case_id": "T006",
+    "domain": "tort",
+    "difficulty": "medium",
+    "fact_pattern": "A gym trainer pushed a client to do excessive weight training despite the client expressing discomfort. The client suffered a herniated disc. The gym's waiver form was signed by the client.",
+    "applicable_statutes": [
+      "Consumer Protection Act 2019, Section 2(42) - Deficiency in service",
+      "Law of Torts - Professional Negligence"
+    ],
+    "precedents": [
+      {
+        "case_id": "P022",
+        "case_name": "Bolam v Friern Hospital (1957)",
+        "verdict": "liable",
+        "rationale": "Professional must act within standards of a reasonable practitioner. Ignoring client distress is negligence."
+      }
+    ],
+    "evidence_flags": [
+      "client_complaint_documented",
+      "waiver_signed",
+      "medical_report_available"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Waiver does not cover negligence. Trainer ignored expressed distress, breaching duty of care.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "T001",
+      "T004"
+    ]
+  },
+  {
+    "case_id": "T007",
+    "domain": "tort",
+    "difficulty": "medium",
+    "fact_pattern": "A dog owner's pet bit a child playing in a public park. The dog was not on a leash. The owner claims the child provoked the dog by throwing stones.",
+    "applicable_statutes": [
+      "Law of Torts - Strict Liability for Animals",
+      "Municipal bylaws - Leash requirements in public spaces"
+    ],
+    "precedents": [
+      {
+        "case_id": "P023",
+        "case_name": "Rylands v Fletcher (1868)",
+        "verdict": "liable",
+        "rationale": "Keeper of a dangerous thing is strictly liable for harm it causes if it escapes control."
+      }
+    ],
+    "evidence_flags": [
+      "no_leash_confirmed",
+      "child_provocation_disputed",
+      "witness_statements_mixed"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Dog owner strictly liable for unleashed dog. Provocation by child, if proven, may reduce damages but not liability.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "T002"
+    ]
+  },
+  {
+    "case_id": "T008",
+    "domain": "tort",
+    "difficulty": "medium",
+    "fact_pattern": "An e-commerce platform delivered a defective power bank that caught fire and damaged furniture worth Rs. 2 lakhs. The platform claims it is only a marketplace and the seller is liable.",
+    "applicable_statutes": [
+      "Consumer Protection Act 2019, Section 2(47) - Product liability",
+      "E-Commerce Rules 2020 - Marketplace duties"
+    ],
+    "precedents": [
+      {
+        "case_id": "P024",
+        "case_name": "Amazon Seller Services v Consumer (2023)",
+        "verdict": "partial_liability",
+        "rationale": "E-commerce platforms share liability if they fail quality checks on listed products."
+      }
+    ],
+    "evidence_flags": [
+      "product_photos",
+      "fire_damage_documented",
+      "platform_quality_check_absent"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Platform failed quality verification duty. Joint liability with seller under Consumer Protection Act.",
+    "court_hierarchy_verdicts": {
+      "high_court": "partial_liability",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "T004"
+    ]
+  },
+  {
+    "case_id": "C006",
+    "domain": "contract",
+    "difficulty": "easy",
+    "fact_pattern": "A software company agreed to deliver a mobile app to a client in 60 days for Rs. 8 lakhs. After 90 days, only 40% was complete. The client terminated the contract and demanded a full refund of the Rs. 4 lakh advance.",
+    "applicable_statutes": [
+      "Indian Contract Act 1872, Section 55 - Effect of failure to perform at fixed time",
+      "Indian Contract Act 1872, Section 73 - Compensation for breach"
+    ],
+    "precedents": [
+      {
+        "case_id": "P025",
+        "case_name": "Citrix Systems v Infosys (2017)",
+        "verdict": "liable",
+        "rationale": "Service provider who fails to deliver on time must refund advance and pay damages."
+      }
+    ],
+    "evidence_flags": [
+      "contract_signed",
+      "milestone_reports_show_delay",
+      "advance_paid"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Software company breached time-bound contract. Client entitled to full refund of advance plus damages.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "C002",
+      "C003"
+    ]
+  },
+  {
+    "case_id": "C007",
+    "domain": "contract",
+    "difficulty": "easy",
+    "fact_pattern": "A farmer agreed to sell 1000 kg of rice at Rs. 30/kg to a buyer. Before delivery, market price rose to Rs. 45/kg. The farmer refused to deliver claiming the contract was unfair.",
+    "applicable_statutes": [
+      "Indian Contract Act 1872, Section 73 - Compensation for breach",
+      "Sale of Goods Act 1930, Section 56 - Buyer's right to damages"
+    ],
+    "precedents": [
+      {
+        "case_id": "P026",
+        "case_name": "Krell v Henry (1903)",
+        "verdict": "liable",
+        "rationale": "Price fluctuation alone does not frustrate a contract. Seller must honor agreed terms."
+      }
+    ],
+    "evidence_flags": [
+      "written_contract",
+      "market_price_documented"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Price rise does not constitute frustration. Farmer must deliver at agreed price or pay difference as damages.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "C001"
+    ]
+  },
+  {
+    "case_id": "C008",
+    "domain": "contract",
+    "difficulty": "easy",
+    "fact_pattern": "A tuition teacher agreed to prepare a student for competitive exams over 6 months for Rs. 1.5 lakhs. After 2 months, the teacher stopped classes without notice. The student failed the exam.",
+    "applicable_statutes": [
+      "Indian Contract Act 1872, Section 39 - Effect of refusal of party to perform wholly",
+      "Consumer Protection Act 2019 - Deficiency in service"
+    ],
+    "precedents": [
+      {
+        "case_id": "P027",
+        "case_name": "Lucknow Development Authority v MK Gupta (1994)",
+        "verdict": "liable",
+        "rationale": "Service provider who abandons contract midway is liable for refund and consequential damages."
+      }
+    ],
+    "evidence_flags": [
+      "payment_receipt",
+      "classes_stopped_abruptly",
+      "exam_result_failed"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Teacher breached contract by stopping classes. Student entitled to proportionate refund and damages.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "C006"
+    ]
+  },
+  {
+    "case_id": "ADM-003",
+    "domain": "administrative",
+    "difficulty": "medium",
+    "fact_pattern": "A government employee was transferred to a remote posting as 'punishment' after filing a corruption complaint against a senior officer. The employee claims violation of service rules and malicious intent.",
+    "applicable_statutes": [
+      "Central Civil Services Rules - Transfer provisions",
+      "Whistle Blowers Protection Act 2014",
+      "Constitution of India, Article 311 - Dismissal, removal or reduction in rank"
+    ],
+    "precedents": [
+      {
+        "case_id": "P-ADM-03",
+        "case_name": "Union of India v SL Abbas (1993)",
+        "verdict": "not_liable",
+        "rationale": "Transfer is an incident of service but cannot be used as punishment. Malice must be proven."
+      }
+    ],
+    "evidence_flags": [
+      "corruption_complaint_filed",
+      "transfer_order_issued_next_day",
+      "no_prior_transfer_history"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Timing of transfer suggests retaliation. Whistle blower entitled to protection. Transfer order quashed.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "ADM-001"
+    ]
+  },
+  {
+    "case_id": "ADM-004",
+    "domain": "administrative",
+    "difficulty": "hard",
+    "fact_pattern": "A municipality denied building permission for a residential house citing 'environmental concerns' near a river bank. The applicant shows neighboring plots received permission. The municipality cannot produce the environmental study.",
+    "applicable_statutes": [
+      "Constitution of India, Article 14 - Right to Equality",
+      "Environment Protection Act 1986 - Environmental clearance"
+    ],
+    "precedents": [
+      {
+        "case_id": "P-ADM-04",
+        "case_name": "Vellore Citizens Welfare Forum v Union of India (1996)",
+        "verdict": "partial_liability",
+        "rationale": "Environmental protection is paramount but must be applied consistently and with scientific basis."
+      }
+    ],
+    "evidence_flags": [
+      "neighboring_permissions_granted",
+      "no_environmental_study",
+      "applicant_compliant_otherwise"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Discriminatory denial without environmental study violates Article 14. Permission must be granted or consistent policy applied.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "ADM-002"
+    ]
+  },
+  {
+    "case_id": "ADM-005",
+    "domain": "administrative",
+    "difficulty": "medium",
+    "fact_pattern": "A student with a disability was denied admission to a government college despite qualifying marks, citing 'lack of infrastructure for disabled students.' The student invokes the Rights of Persons with Disabilities Act.",
+    "applicable_statutes": [
+      "Rights of Persons with Disabilities Act 2016, Section 32 - Reservation in higher education",
+      "Constitution of India, Article 21 - Right to Life and Education"
+    ],
+    "precedents": [
+      {
+        "case_id": "P-ADM-05",
+        "case_name": "Disabled Rights Group v Union of India (2018)",
+        "verdict": "liable",
+        "rationale": "Educational institutions cannot deny admission on grounds of disability. Reasonable accommodation is mandatory."
+      }
+    ],
+    "evidence_flags": [
+      "qualifying_marks_confirmed",
+      "disability_certificate_valid",
+      "college_refusal_letter"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Denial violates RPwD Act 2016. College must provide reasonable accommodation and grant admission.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "ADM-001",
+      "ADM-003"
+    ]
+  },
+  {
+    "case_id": "T009",
+    "domain": "tort",
+    "difficulty": "medium",
+    "fact_pattern": "A factory discharged untreated waste into a river causing skin diseases in a nearby village. The factory claims it has a pollution control board certificate. Villagers filed a public interest litigation.",
+    "applicable_statutes": [
+      "Environment Protection Act 1986 - Pollution control",
+      "Constitution of India, Article 21 - Right to clean environment"
+    ],
+    "precedents": [
+      {
+        "case_id": "P030",
+        "case_name": "MC Mehta v Union of India (1987)",
+        "verdict": "liable",
+        "rationale": "Absolute liability for hazardous activities. No defense of due diligence available."
+      }
+    ],
+    "evidence_flags": [
+      "water_test_reports",
+      "medical_records_villagers",
+      "pcb_certificate_expired"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Factory absolutely liable under MC Mehta principle. Expired PCB certificate confirms non-compliance.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "T005"
+    ]
+  },
+  {
+    "case_id": "T010",
+    "domain": "tort",
+    "difficulty": "medium",
+    "fact_pattern": "A private hospital refused emergency treatment to an accident victim demanding advance payment. The victim died. The family claims medical negligence and violation of right to life.",
+    "applicable_statutes": [
+      "Consumer Protection Act 2019 - Medical negligence",
+      "Constitution of India, Article 21 - Right to Life"
+    ],
+    "precedents": [
+      {
+        "case_id": "P031",
+        "case_name": "Parmanand Katara v Union of India (1989)",
+        "verdict": "liable",
+        "rationale": "Every doctor and hospital has duty to provide emergency medical aid. Refusal is criminal negligence."
+      }
+    ],
+    "evidence_flags": [
+      "emergency_case_confirmed",
+      "advance_demand_witnessed",
+      "death_certificate"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Hospital violated constitutional duty to provide emergency care. Liable for negligence causing death.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "T001"
+    ]
+  },
+  {
+    "case_id": "C009",
+    "domain": "contract",
+    "difficulty": "easy",
+    "fact_pattern": "An online retailer accepted an order for a laptop at Rs. 25,000 (displayed price). After payment, the retailer cancelled claiming it was a 'pricing error' and the actual price was Rs. 75,000.",
+    "applicable_statutes": [
+      "Indian Contract Act 1872, Section 10 - What agreements are contracts",
+      "Consumer Protection Act 2019 - Unfair trade practices"
+    ],
+    "precedents": [
+      {
+        "case_id": "P032",
+        "case_name": "Carlill v Carbolic Smoke Ball Co (1893)",
+        "verdict": "liable",
+        "rationale": "Offer accepted and paid for creates binding contract. Unilateral cancellation is breach."
+      }
+    ],
+    "evidence_flags": [
+      "payment_confirmed",
+      "order_confirmation_email",
+      "cancellation_by_seller"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Accepted order with payment constitutes valid contract. Seller cannot unilaterally cancel citing pricing error.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "C001",
+      "C004"
+    ]
+  },
+  {
+    "case_id": "C010",
+    "domain": "contract",
+    "difficulty": "easy",
+    "fact_pattern": "A landlord refused to return a security deposit of Rs. 1 lakh claiming damages to the flat. The tenant has photos showing the flat was in good condition at the time of vacating. The lease agreement states deposit is refundable.",
+    "applicable_statutes": [
+      "Indian Contract Act 1872, Section 73 - Compensation for breach",
+      "Transfer of Property Act 1882, Section 108 - Rights and liabilities of lessor and lessee"
+    ],
+    "precedents": [
+      {
+        "case_id": "P033",
+        "case_name": "Tenant Rights Association v Delhi (2019)",
+        "verdict": "liable",
+        "rationale": "Security deposit must be returned if property is in reasonable condition. Landlord must prove actual damage."
+      }
+    ],
+    "evidence_flags": [
+      "photos_at_vacating",
+      "lease_agreement",
+      "landlord_claims_damage"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Photographic evidence supports good condition. Landlord must return security deposit per lease terms.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "C003"
+    ]
+  },
+  {
+    "case_id": "PR008",
+    "domain": "property",
+    "difficulty": "hard",
+    "fact_pattern": "A wife seeks partition of a house jointly owned with her husband after divorce. The husband argues the house was bought with his earnings only. The wife contributed to household expenses enabling the purchase.",
+    "applicable_statutes": [
+      "Hindu Marriage Act 1955, Section 27 - Disposal of property",
+      "Hindu Succession Act 1956 - Women's property rights"
+    ],
+    "precedents": [
+      {
+        "case_id": "P034",
+        "case_name": "Pratibha Rani v Suraj Kumar (1985)",
+        "verdict": "partial_liability",
+        "rationale": "Wife's indirect contribution to household enables property acquisition, entitling her to a share."
+      }
+    ],
+    "evidence_flags": [
+      "divorce_decree",
+      "property_in_husband_name",
+      "wife_household_contribution_documented"
+    ],
+    "gold_label_verdict": "partial_liability",
+    "gold_label_reasoning": "Wife's contribution to household indirectly enabled purchase. Entitled to equitable share, not necessarily 50%.",
+    "court_hierarchy_verdicts": {
+      "high_court": "not_liable",
+      "supreme_court": "partial_liability"
+    },
+    "similar_cases": [
+      "PR006"
+    ]
+  },
+  {
+    "case_id": "PR009",
+    "domain": "property",
+    "difficulty": "hard",
+    "fact_pattern": "An NRI claims inherited agricultural land in Punjab. The state government argues NRIs cannot hold agricultural land under Punjab Land Reforms Act. The NRI inherited the land through succession, not purchase.",
+    "applicable_statutes": [
+      "Punjab Land Reforms Act 1972 - Ceiling on land holdings",
+      "Hindu Succession Act 1956 - Succession rights"
+    ],
+    "precedents": [
+      {
+        "case_id": "P035",
+        "case_name": "Bhag Singh v State of Punjab (2004)",
+        "verdict": "not_liable",
+        "rationale": "Inheritance of agricultural land is a constitutional right distinct from purchase restrictions."
+      }
+    ],
+    "evidence_flags": [
+      "nri_status_confirmed",
+      "succession_certificate",
+      "state_objection_filed"
+    ],
+    "gold_label_verdict": "not_liable",
+    "gold_label_reasoning": "Inheritance rights cannot be curtailed by land reform acts. NRI entitled to inherited agricultural land.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "not_liable"
+    },
+    "similar_cases": [
+      "PR006",
+      "PR001"
+    ]
+  },
+  {
+    "case_id": "PR010",
+    "domain": "property",
+    "difficulty": "hard",
+    "fact_pattern": "A temple trust claims ownership of land occupied by a family for 50 years. The family has no title deed but has been paying property tax. The trust produces a 100-year-old endowment deed.",
+    "applicable_statutes": [
+      "Limitation Act 1963, Section 65 - Adverse possession",
+      "Hindu Religious Endowments Act - Trust property protection"
+    ],
+    "precedents": [
+      {
+        "case_id": "P036",
+        "case_name": "Karnataka Board of Wakf v Govt of India (2004)",
+        "verdict": "liable",
+        "rationale": "Religious endowment property cannot be claimed by adverse possession in many states."
+      }
+    ],
+    "evidence_flags": [
+      "endowment_deed_100_years",
+      "family_tax_receipts_50_years",
+      "no_family_title_deed"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Trust property is protected from adverse possession. Family must vacate but may claim compensation for improvements.",
+    "court_hierarchy_verdicts": {
+      "high_court": "partial_liability",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "PR001",
+      "PR002"
+    ]
+  },
+  {
+    "case_id": "CRM-007",
+    "domain": "petty_crime",
+    "difficulty": "hard",
+    "fact_pattern": "A domestic worker is accused of stealing gold jewelry worth Rs. 3 lakhs from her employer. The worker claims the employer gifted the items. No written record of the alleged gift exists. CCTV shows the worker leaving with a bag.",
+    "applicable_statutes": [
+      "Bharatiya Nyaya Sanhita (BNS) 2023, Section 303 - Theft",
+      "Bharatiya Nyaya Sanhita (BNS) 2023, Section 317 - Criminal breach of trust"
+    ],
+    "precedents": [
+      {
+        "case_id": "P-BNS-107",
+        "case_name": "State v Domestic Worker (2024)",
+        "verdict": "forward_to_judge",
+        "rationale": "Theft vs gift dispute is a question of fact requiring trial. CCTV alone insufficient without corroboration."
+      }
+    ],
+    "evidence_flags": [
+      "cctv_footage",
+      "no_gift_receipt",
+      "employer_complaint_filed"
+    ],
+    "expert_verdict": "forward_to_judge",
+    "court_hierarchy_verdicts": {
+      "high_court": "forward_to_judge",
+      "supreme_court": "forward_to_judge"
+    },
+    "similar_cases": [
+      "CRM-004"
+    ],
+    "gold_label_verdict": "forward_to_judge",
+    "gold_label_reasoning": "Criminal matter under BNS 2023. AI cannot adjudicate. Case forwarded to human judge for trial."
+  },
+  {
+    "case_id": "T011",
+    "domain": "tort",
+    "difficulty": "medium",
+    "fact_pattern": "A school failed to supervise students during recess. A 10-year-old child fell from a broken railing and fractured his arm. The school claims the railing was damaged the same morning and they had not noticed.",
+    "applicable_statutes": [
+      "Law of Torts - Duty of care towards children",
+      "Consumer Protection Act 2019 - Deficiency in service"
+    ],
+    "precedents": [
+      {
+        "case_id": "P037",
+        "case_name": "Spring Meadows Hospital v Harjol Ahluwalia (1998)",
+        "verdict": "liable",
+        "rationale": "Institution in charge of minor has heightened duty of care. Infrastructure must be maintained."
+      }
+    ],
+    "evidence_flags": [
+      "broken_railing_photo",
+      "no_supervision_during_recess",
+      "medical_report"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "School has heightened duty of care for minor children. Failure to maintain safe premises is negligence.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "T005",
+      "T007"
+    ]
+  },
+  {
+    "case_id": "T012",
+    "domain": "tort",
+    "difficulty": "medium",
+    "fact_pattern": "A ride-sharing driver took a longer route deliberately to inflate the fare. The passenger complained but was charged Rs. 800 instead of the estimated Rs. 350. The app shows the detour clearly.",
+    "applicable_statutes": [
+      "Consumer Protection Act 2019 - Unfair trade practices",
+      "Indian Contract Act 1872, Section 17 - Fraud"
+    ],
+    "precedents": [
+      {
+        "case_id": "P038",
+        "case_name": "Uber India v Consumer Forum (2022)",
+        "verdict": "liable",
+        "rationale": "Platform and driver jointly liable for deliberate fare inflation through route manipulation."
+      }
+    ],
+    "evidence_flags": [
+      "app_route_data",
+      "fare_discrepancy_documented",
+      "passenger_complaint"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Deliberate detour constitutes unfair trade practice. Driver and platform jointly liable for refund plus compensation.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "T008"
+    ]
+  },
+  {
+    "case_id": "C011",
+    "domain": "contract",
+    "difficulty": "easy",
+    "fact_pattern": "A catering company was hired for a corporate event for Rs. 3 lakhs. The food served caused food poisoning to 30 attendees. The catering company claims the venue's storage was improper.",
+    "applicable_statutes": [
+      "Indian Contract Act 1872, Section 73 - Compensation for breach",
+      "Food Safety and Standards Act 2006 - Food safety"
+    ],
+    "precedents": [
+      {
+        "case_id": "P039",
+        "case_name": "Ashby v White (1703)",
+        "verdict": "liable",
+        "rationale": "Where there is a right, there is a remedy. Breach of implied warranty of fitness."
+      }
+    ],
+    "evidence_flags": [
+      "medical_reports_food_poisoning",
+      "food_samples_tested",
+      "venue_storage_adequate"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Caterer has implied duty to provide safe food. Venue storage was adequate. Caterer fully liable.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "C001",
+      "C006"
+    ]
+  },
+  {
+    "case_id": "ADM-006",
+    "domain": "administrative",
+    "difficulty": "medium",
+    "fact_pattern": "A passport renewal application was rejected without reason after being pending for 8 months. The applicant has no criminal record and all documents are in order. The passport office cites 'verification pending' without specifying what verification.",
+    "applicable_statutes": [
+      "Passports Act 1967, Section 5 - Application for passport",
+      "Constitution of India, Article 21 - Right to travel"
+    ],
+    "precedents": [
+      {
+        "case_id": "P-ADM-06",
+        "case_name": "Maneka Gandhi v Union of India (1978)",
+        "verdict": "liable",
+        "rationale": "Right to travel is a fundamental right under Article 21. Passport cannot be withheld without specific reasons."
+      }
+    ],
+    "evidence_flags": [
+      "clean_criminal_record",
+      "all_documents_submitted",
+      "8_month_delay"
+    ],
+    "gold_label_verdict": "liable",
+    "gold_label_reasoning": "Withholding passport without specific reason violates Article 21. Passport office directed to issue within 30 days.",
+    "court_hierarchy_verdicts": {
+      "high_court": "liable",
+      "supreme_court": "liable"
+    },
+    "similar_cases": [
+      "ADM-001",
+      "ADM-005"
+    ]
   }
 ]
