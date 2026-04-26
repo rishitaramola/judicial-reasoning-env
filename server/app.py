@@ -24,7 +24,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, RedirectResponse, FileResponse
 from dotenv import load_dotenv
-import anthropic
+import requests
 
 # Ensure project root is on path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -41,14 +41,12 @@ load_dotenv()
 
 # ─── Configuration ────────────────────────────────────────────
 
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 
-if ANTHROPIC_API_KEY:
-    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-    print(f"OK: Anthropic multi-agent council active")
+if OPENROUTER_API_KEY:
+    print(f"OK: OpenRouter multi-agent council active")
 else:
-    client = None
-    print("WARNING: No Anthropic API key. AI Judge will use offline demo mode.")
+    print("WARNING: No OpenRouter API key. AI Judge will use offline demo mode.")
 
 CRIMINAL_DOMAINS = [
     "murder", "culpable_homicide", "assault", "hurt", 
@@ -84,7 +82,7 @@ PRS_SEARCH       = "https://prsindia.org/billtrack?q="
 COUNCIL_AGENTS = [
     {
         "name": "Agent 1 — The Precedent Analyst",
-        "model": "claude-sonnet-4-20250514",
+        "model": "meta-llama/llama-3.3-70b-instruct:free",
         "persona": (
             "You are the Precedent Analyst on the AI Judicial Council. "
             "You reason through established Indian case law and statutory frameworks. "
@@ -98,7 +96,7 @@ COUNCIL_AGENTS = [
     },
     {
         "name": "Agent 2 — The Constitutional Scholar",
-        "model": "claude-sonnet-4-20250514",
+        "model": "deepseek/deepseek-r1:free",
         "persona": (
             "You are the Constitutional Scholar on the AI Judicial Council. "
             "You reason through Constitutional law, Fundamental Rights, and statutory compliance. "
@@ -111,7 +109,7 @@ COUNCIL_AGENTS = [
     },
     {
         "name": "Agent 3 — The Legal Realist",
-        "model": "claude-sonnet-4-20250514",
+        "model": "mistralai/mistral-7b-instruct:free",
         "persona": (
             "You are the Legal Realist on the AI Judicial Council. "
             "You analyze cases through real-world impact and practical justice. "
@@ -124,7 +122,7 @@ COUNCIL_AGENTS = [
     }
 ]
 # Chief Justice synthesizes all 3 arguments
-CHIEF_JUSTICE_MODEL = "claude-sonnet-4-20250514"
+CHIEF_JUSTICE_MODEL = "deepseek/deepseek-r1:free"
 
 MAX_TOTAL_REWARD       = 1.0
 SUCCESS_SCORE_THRESHOLD = 0.5
@@ -514,9 +512,44 @@ def _fetch_indian_kanoon_precedents(query: str, max_results: int = 3) -> str:
         print(f"IK fetch failed (non-critical): {ex}")
         return ""
 
+def _call_openrouter(prompt: str, model: str, retries: int = 3) -> str:
+    if not OPENROUTER_API_KEY:
+        raise Exception("No OPENROUTER_API_KEY set.")
+        
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://huggingface.co/spaces/RishitaRamola42/judicial-reasoning-env",
+        "X-Title": "Justice AI - Team ALACRITY"
+    }
+    
+    body = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 1000,
+        "temperature": 0.3
+    }
+    
+    for attempt in range(retries):
+        try:
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=body,
+                timeout=30
+            )
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            if attempt < retries - 1:
+                time.sleep(2 ** attempt)
+            else:
+                raise e
+
+
 def _call_council_member(agent: dict, obs, is_criminal: bool, live_precedents: str = "") -> dict:
     """Call one council member model and return their structured legal argument."""
-    if not client:
+    if not OPENROUTER_API_KEY:
         return {
             "name": agent["name"], "model": agent["model"],
             "verdict": "forward_to_judge" if is_criminal else "liable",
@@ -561,21 +594,20 @@ Respond ONLY with valid JSON (no markdown, no preamble):
   "key_statutes": ["statute1", "statute2"],
   "confidence": 0.0
 }}"""
-    for attempt in range(3):
-        try:
-            resp = client.messages.create(
-                model=agent["model"],
-                max_tokens=1000,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            raw = resp.content[0].text.strip()
-            raw = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
-            raw = raw.replace("```json", "").replace("```", "").strip()
-            m = re.search(r'\{.*\}', raw, re.DOTALL)
-            data = json.loads(m.group(0) if m else raw)
-            return {"name": agent["name"], "model": agent["model"], **data}
-        except Exception:
-            time.sleep(2 ** attempt)
+    try:
+        raw = _call_openrouter(prompt, agent["model"])
+        raw = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
+        data = json.loads(m.group(0) if m else raw)
+        return {"name": agent["name"], "model": agent["model"], **data}
+    except Exception:
+        return {
+            "name": agent["name"], "model": agent["model"],
+            "verdict": "forward_to_judge" if is_criminal else "liable",
+            "argument": f"[{agent['name']} offline or timeout.]",
+            "key_statutes": [], "confidence": 0.4
+        }
     return {
         "name": agent["name"], "model": agent["model"],
         "verdict": "forward_to_judge" if is_criminal else "liable",
@@ -586,7 +618,7 @@ Respond ONLY with valid JSON (no markdown, no preamble):
 
 def _synthesize_verdict(council_votes: list, obs, is_criminal: bool) -> dict:
     """Chief Justice synthesizes all 3 arguments and delivers the final verdict."""
-    if not client:
+    if not OPENROUTER_API_KEY:
         return {
             "verdict": "forward_to_judge" if is_criminal else "liable",
             "confidence_score": 0.8,
@@ -641,31 +673,24 @@ Respond ONLY with valid JSON:
   "ratio_decidendi": "Key legal principle (Note: This is an AI preliminary analysis, not a binding judicial precedent): ...",
   "obiter_dicta": "Recommended next steps: Whether to approach Internal Committee (POSH), Labour Court (IDA 1947), or Civil Court. Any additional observations."
 }}"""
-    for attempt in range(3):
-        try:
-            resp = client.messages.create(
-                model=CHIEF_JUSTICE_MODEL,
-                max_tokens=2000,
-                messages=[{"role": "user", "content": synthesis_prompt}]
-            )
-            raw = resp.content[0].text.strip()
-            raw = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
-            raw = raw.replace("```json", "").replace("```", "").strip()
-            m = re.search(r'\{.*\}', raw, re.DOTALL)
-            return json.loads(m.group(0) if m else raw)
-        except Exception:
-            time.sleep(2 ** attempt)
-    # Fallback: majority vote
-    counts = {}
-    for v in council_votes:
-        counts[v.get('verdict', 'liable')] = counts.get(v.get('verdict', 'liable'), 0) + 1
-    maj = max(counts, key=counts.get)
-    return {
-        "verdict": maj, "confidence_score": 0.65,
-        "reasoning_chain": f"Chief Justice synthesis unavailable. Majority council position ({maj}) adopted.",
-        "cited_precedents": [], "ratio_decidendi": "Majority council verdict adopted per constitutional design.",
-        "obiter_dicta": "Full synthesis will be available when the Chief Justice model is online."
-    }
+    try:
+        raw = _call_openrouter(synthesis_prompt, CHIEF_JUSTICE_MODEL)
+        raw = re.sub(r'<think>.*?</think>', '', raw, flags=re.DOTALL).strip()
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
+        return json.loads(m.group(0) if m else raw)
+    except Exception:
+        # Fallback: majority vote
+        counts = {}
+        for v in council_votes:
+            counts[v.get('verdict', 'liable')] = counts.get(v.get('verdict', 'liable'), 0) + 1
+        maj = max(counts, key=counts.get)
+        return {
+            "verdict": maj, "confidence_score": 0.65,
+            "reasoning_chain": f"Chief Justice synthesis unavailable. Majority council position ({maj}) adopted.",
+            "cited_precedents": [], "ratio_decidendi": "Majority council verdict adopted per constitutional design.",
+            "obiter_dicta": "Full synthesis will be available when the Chief Justice model is online."
+        }
 
 
 def get_agent_action(obs, _unused=None) -> tuple:
