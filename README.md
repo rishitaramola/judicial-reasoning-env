@@ -1,3 +1,12 @@
+---
+title: Judicial Reasoning Env
+emoji: ⚖️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # ⚖️ JudicialMediationEnv — Multi-Agent Indian Legal RL Environment
 
 ## Problem
@@ -59,7 +68,7 @@ The core training loop uses **GRPO** (Group Relative Policy Optimization) via th
 - **Execution:** Runs efficiently on a free Colab T4 GPU.
 - **Colab Notebook:** [Link to Training Notebook](https://colab.research.google.com/github/rishitaramola/judicial-reasoning-env/blob/main/training/training_colab.ipynb)
 
-![Reward Curve](training_curve.png)
+![Reward Curve](https://raw.githubusercontent.com/rishitaramola/judicial-reasoning-env/main/training_curve.png)
 
 ### Before/After Training Example
 **Before (Baseline LLM):** 

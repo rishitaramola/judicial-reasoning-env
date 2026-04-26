@@ -12,17 +12,20 @@ authors:
 
 ---
 
-## 1. The Crisis: 50 Million Indians Waiting for Justice
+## 1. The Crisis: Is this the image of Vishwaguru?
+
+We call ourselves *Vishwaguru* (Teacher of the World) — and there is no doubt to that. We come from modern classrooms filled with Apple computers and state-of-the-art tech. But for a minute, imagine an Indian courtroom. Has it changed in 100 years? 
+
+If you step into the storeroom or record room of a district court, you will see piles upon piles of files and paperwork. Long lines of decades of litigation, endless arguments, and millions of unresolved or pending cases.
 
 The **National Judicial Data Grid (NJDG)** tells a sobering story:
+- **50+ million pending cases** across all Indian courts.
+- India has only about **21 judges per million people**.
+- Millions of undertrials spend years behind bars, only to be ultimately acquitted because they were never guilty. 
 
-- **50+ million pending cases** across all Indian courts
-- **3,48,493 uncontested/undated cases** — no hearing dates, no resolution
-- **4,78,587 cases filed by women**, many involving urgent matters like domestic violence and maintenance
-- Cases routinely take **10–20 years** to reach a verdict in overloaded lower courts
-- Thousands of undertrial prisoners remain in custody awaiting a hearing that may never come on time
+What a waste of human life. What a waste of resources. Now tell me, is this the *Vishwaguru* image you have in your mind?
 
-This is not a statistics problem. It is a human tragedy.
+This is not a statistics problem. It is a human tragedy. And this is exactly where we present our vision for the future judiciary of India. We would like to present **Judge AI (JusticeEngine-01)** — the solution which saves hassle, saves time, and saves human life.
 
 ---
 
